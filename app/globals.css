@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #07090F;
+  --card: #0C1220;
+  --card-raised: #111827;
+  --purple: #6d5dfb;
+  --purple-muted: #8B7FFF;
+  --cyan: #00b4d8;
+  --green: #4ADE80;
+  --gold: #FBBF24;
+  --risk: #F87171;
+  --text-main: #F0F2F8;
+  --text-secondary: #6B7A9F;
+  --glass-border: rgba(255, 255, 255, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-main);
+  font-family: var(--font-geist), "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-sora), var(--font-geist), "Inter", system-ui, sans-serif;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-geist-mono), "JetBrains Mono", monospace;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(109, 93, 251, 0.25);
+  border-radius: 3px;
+}
+
+.glass {
+  background: rgba(12, 18, 32, 0.75);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-raised {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Toned-down glows — roughly 40% less intense than before */
+.glow-purple {
+  box-shadow: 0 0 24px rgba(109, 93, 251, 0.14), 0 0 48px rgba(109, 93, 251, 0.06);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 24px rgba(0, 180, 216, 0.12), 0 0 48px rgba(0, 180, 216, 0.05);
+}
+
+.text-gradient-purple {
+  background: linear-gradient(135deg, #8B7FFF, #A78BFA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle grid — very low opacity for premium feel */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Pulse breathing keyframe for JS-inaccessible contexts */
+@keyframes pulse-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.008); }
+}
+
+@keyframes signal-flow {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Signal line flowing animation */
+.signal-line {
+  stroke-dasharray: 5 7;
+  animation: signal-flow 1.2s linear infinite;
+}
+
+@keyframes typing-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.typing-cursor {
+  animation: typing-cursor 1.05s steps(1, end) infinite;
+}
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
