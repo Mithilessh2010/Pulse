@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, FileText, Sparkles } from "lucide-react";
+import { Check, FileText, Info, Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 export const containerVariants = {
@@ -41,9 +41,9 @@ export function DashboardCard({
 }
 
 export function StatusBadge({ label }: { label: string }) {
-  const risk = label.includes("Risk") || label.includes("Near") || label.includes("Blocked");
-  const review = label.includes("Review") || label.includes("Approval") || label.includes("Pending");
-  const color = risk ? "#F87171" : review ? "#FBBF24" : label.includes("Available") || label.includes("Approved") || label.includes("Completed") ? "#00B4D8" : "#4ADE80";
+  const risk = label.includes("Risk") || label.includes("Near") || label.includes("Blocked") || label.includes("Rejected") || label.includes("High");
+  const review = label.includes("Review") || label.includes("Approval") || label.includes("Pending") || label.includes("Waiting") || label.includes("Medium");
+  const color = risk ? "#F87171" : review ? "#FBBF24" : label.includes("Available") || label.includes("Approved") || label.includes("Completed") || label.includes("Low") ? "#00B4D8" : "#4ADE80";
 
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.035] px-2 py-1 text-[11px] font-medium text-[#C8D0E8]">
@@ -51,6 +51,10 @@ export function StatusBadge({ label }: { label: string }) {
       {label}
     </span>
   );
+}
+
+export function RiskBadge({ label }: { label: string }) {
+  return <StatusBadge label={`${label} Risk`} />;
 }
 
 export function ProgressBar({ value, color = "#6D5DFB" }: { value: number; color?: string }) {
@@ -67,6 +71,26 @@ export function MetricPill({ label, value }: { label: string; value: string }) {
       <p className="text-xl font-semibold text-[#F0F2F8]">{value}</p>
       <p className="mt-1 text-xs text-[#6B7A9F]">{label}</p>
     </div>
+  );
+}
+
+export function LoadingSpinner({ label = "Loading" }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-xs font-medium text-[#9BA8C7]">
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00B4D8]" />
+      {label}
+    </span>
+  );
+}
+
+export function TooltipInfo({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <Info className="h-4 w-4 text-[#6B7A9F]" />
+      <span className="pointer-events-none absolute left-1/2 top-6 z-20 w-64 -translate-x-1/2 rounded-xl border border-white/10 bg-[#0A0F1C] p-3 text-xs leading-5 text-[#C8D0E8] opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
+        {text}
+      </span>
+    </span>
   );
 }
 
@@ -99,6 +123,7 @@ export function AskPulseCard({ answer = askFallback }: { answer?: string }) {
   const [response, setResponse] = useState(answer);
   const [activePrompt, setActivePrompt] = useState("What is at risk?");
   const [isLoading, setIsLoading] = useState(false);
+  const [source, setSource] = useState<"openrouter" | "fallback" | "error">("fallback");
 
   async function askPulse(prompt: string) {
     setActivePrompt(prompt);
@@ -108,12 +133,14 @@ export function AskPulseCard({ answer = askFallback }: { answer?: string }) {
       const result = await fetch("/api/ask-pulse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ message: prompt }),
       });
       const data = await result.json();
       setResponse(typeof data.answer === "string" ? data.answer : askFallback);
+      setSource(data.source === "openrouter" ? "openrouter" : "fallback");
     } catch {
       setResponse(answer || askFallback);
+      setSource("error");
     } finally {
       setIsLoading(false);
     }
@@ -147,8 +174,9 @@ export function AskPulseCard({ answer = askFallback }: { answer?: string }) {
         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#00B4D8]">
           <Sparkles className="h-3.5 w-3.5" />
           {isLoading ? "Thinking" : "Pulse answer"}
+          {!isLoading ? <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-[#9BA8C7]">{source === "openrouter" ? "Live AI" : source === "error" ? "Fallback" : "Demo-safe"}</span> : null}
         </div>
-        <p className="text-sm leading-6 text-[#D7E1F7]">{isLoading ? "Reading project, approval, workload, and expense context..." : response}</p>
+        {isLoading ? <LoadingSpinner label="Reading project, approval, workload, and expense context..." /> : <p className="text-sm leading-6 text-[#D7E1F7]">{response}</p>}
       </motion.div>
     </DashboardCard>
   );

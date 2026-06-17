@@ -9,21 +9,37 @@ import {
   reports,
   tasks,
   teamMembers,
+  workspaceSummary,
 } from "@/lib/mockData";
 
 export const runtime = "nodejs";
+const OPENROUTER_TIMEOUT_MS = 12000;
 
 const fallback =
-  "Website Redesign is the highest-risk project. It is 3 days behind pace because design approval is still pending.";
+  "Pulse sees 4 active blockers, 6 waiting approvals, and Website Redesign as the highest-risk project. The next best action is to clear design approval and reassign one task from Maya to Jordan.";
 
 function getFallback(prompt: string) {
-  return askPulseResponses[prompt] ?? fallback;
+  const normalized = prompt.toLowerCase();
+  if (askPulseResponses[prompt]) return askPulseResponses[prompt];
+  if (normalized.includes("risk")) {
+    return "Website Redesign and Investor Update Deck need attention. Website Redesign is 3 days behind pace because design approval is pending. Investor Update Deck is blocked by missing finance numbers.";
+  }
+  if (normalized.includes("support") || normalized.includes("overloaded")) {
+    return "Maya appears near capacity at 87% workload with 9 active tasks and 2 blocked tasks. Jordan has available capacity at 34%, so one task could be reassigned.";
+  }
+  if (normalized.includes("approval")) {
+    return "There are 6 approvals waiting: 3 task approvals, 2 expense approvals, and 1 client update. The highest priority item is Maya's Q3 dashboard proof.";
+  }
+  if (normalized.includes("expense") || normalized.includes("budget")) {
+    return "Budget usage is 64%, with $4,820 used of $7,500. Three expenses are pending, and Software is the highest category.";
+  }
+  return fallback;
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+    const prompt = typeof body.message === "string" ? body.message.trim() : typeof body.prompt === "string" ? body.prompt.trim() : "";
 
     if (!prompt) {
       return NextResponse.json({ answer: "Ask Pulse needs a question before it can respond." }, { status: 400 });
@@ -44,10 +60,15 @@ export async function POST(request: Request) {
       blockers,
       reports,
       activityFeed,
+      workspaceSummary,
     };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
@@ -60,7 +81,7 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "You are Ask Pulse, an executive command assistant for a team operating system. Answer using the workspace data provided. Be concise, direct, and useful. Focus on projects, tasks, blockers, approvals, workload, expenses, and reports. If data is missing, say what is unknown and suggest a next action.",
+              "You are Ask Pulse, an executive command assistant inside a team operating system. Answer using only the workspace data provided. Be concise, direct, useful, and action-oriented. Focus on projects, tasks, blockers, approvals, workload, expenses, budgets, and reports. If information is missing, say what is unknown and suggest the next best action. Do not invent data.",
           },
           {
             role: "system",
@@ -73,6 +94,7 @@ export async function POST(request: Request) {
         ],
       }),
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       console.error("[Ask Pulse] OpenRouter request failed", response.status, await response.text());

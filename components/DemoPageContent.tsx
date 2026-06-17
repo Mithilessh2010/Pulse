@@ -86,7 +86,7 @@ export default function DemoPageContent() {
               {projects.slice(0, 2).map((project) => (
                 <div key={project.name} className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
                   <p className="text-sm font-semibold text-[#F0F2F8]">{project.name}</p>
-                  <p className="mt-1 text-xs text-[#6B7A9F]">{project.status} · {project.progress}% · {project.predictedFinish}</p>
+                  <p className="mt-1 text-xs text-[#6B7A9F]">{project.statusLabel} · {project.progress}% · {project.predictedFinish}</p>
                 </div>
               ))}
               <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
@@ -94,8 +94,8 @@ export default function DemoPageContent() {
                 <p className="mt-1 text-xs text-[#6B7A9F]">{approvals[0].aiNote}</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
-                <p className="text-sm font-semibold text-[#F0F2F8]">{teamMembers[0].name} capacity</p>
-                <p className="mt-1 text-xs text-[#6B7A9F]">{teamMembers[0].load}% · {teamMembers[0].status}</p>
+                <p className="text-sm font-semibold text-[#F0F2F8]">{teamMembers[0].shortName} capacity</p>
+                <p className="mt-1 text-xs text-[#6B7A9F]">{teamMembers[0].capacity}% · {teamMembers[0].status}</p>
               </div>
             </div>
             <div className="rounded-2xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-4 text-sm leading-6 text-[#D7E1F7]">

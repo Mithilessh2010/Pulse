@@ -1,10 +1,19 @@
 {
-  "/signin/page": "app/signin/page.js",
   "/page": "app/page.js",
+  "/pricing/page": "app/pricing/page.js",
+  "/features/page": "app/features/page.js",
+  "/product/page": "app/product/page.js",
+  "/signup/page": "app/signup/page.js",
+  "/signin/page": "app/signin/page.js",
+  "/demo/page": "app/demo/page.js",
   "/api/ask-pulse/route": "app/api/ask-pulse/route.js",
   "/app/page": "app/app/page.js",
-  "/app/tasks/page": "app/app/tasks/page.js",
+  "/app/projects/page": "app/app/projects/page.js",
+  "/app/approvals/page": "app/app/approvals/page.js",
+  "/app/expenses/page": "app/app/expenses/page.js",
   "/app/team/page": "app/app/team/page.js",
+  "/app/tasks/page": "app/app/tasks/page.js",
   "/app/ask/page": "app/app/ask/page.js",
+  "/app/settings/page": "app/app/settings/page.js",
   "/app/reports/page": "app/app/reports/page.js"
 }
