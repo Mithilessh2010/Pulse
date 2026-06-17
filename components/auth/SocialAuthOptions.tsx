@@ -66,7 +66,7 @@ export default function SocialAuthOptions({ onUnavailable }: SocialAuthOptionsPr
             title={`Continue with ${label}`}
             onClick={() =>
               onUnavailable(
-                `${label} sign-in is coming soon. Use the demo email flow for now.`,
+                `${label} sign-in is available soon. Use email sign-in for now.`,
               )
             }
             className="group flex h-11 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-[12px] font-medium text-[#9BA8C7] transition hover:border-[#6D5DFB]/50 hover:bg-white/[0.055] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/40"

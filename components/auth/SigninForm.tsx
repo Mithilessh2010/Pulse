@@ -28,9 +28,26 @@ export default function SigninForm() {
       return;
     }
 
-    window.localStorage.setItem("pulse-demo-session", "true");
-    setSuccess("Demo session ready. Opening Pulse.");
-    setTimeout(() => router.push("/app"), 300);
+    try {
+      const response = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(typeof data.error === "string" ? data.error : "Unable to sign in.");
+        return;
+      }
+
+      setSuccess(data.needsVerification ? "Verification required. Opening code screen." : "Signed in. Opening Pulse.");
+      router.push(typeof data.redirectTo === "string" ? data.redirectTo : "/app");
+    } catch {
+      setError("Unable to sign in. Try again in a moment.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

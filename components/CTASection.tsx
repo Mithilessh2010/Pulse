@@ -57,7 +57,7 @@ export default function CTASection() {
               <ArrowRight size={14} />
             </motion.a>
             <motion.a
-              href="#"
+              href="/demo"
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-medium backdrop-blur-md"
               style={{
                 background: "rgba(255,255,255,0.03)",

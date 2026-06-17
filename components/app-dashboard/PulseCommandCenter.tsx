@@ -88,7 +88,7 @@ const tasks = [
   "Review design specs",
   "Approve AWS estimate",
   "Send client update",
-  "Record demo walkthrough",
+  "Record product walkthrough",
 ];
 
 const activities = [

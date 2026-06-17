@@ -39,9 +39,26 @@ export default function SignupForm() {
       return;
     }
 
-    window.localStorage.setItem("pulse-demo-session", "true");
-    setSuccess("Demo workspace created. Opening Pulse.");
-    setTimeout(() => router.push("/app"), 300);
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, confirmPassword, workspaceName }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(typeof data.error === "string" ? data.error : "Unable to create account.");
+        return;
+      }
+
+      setSuccess("Account created. Opening verification.");
+      router.push(typeof data.redirectTo === "string" ? data.redirectTo : `/verify?email=${encodeURIComponent(email)}`);
+    } catch {
+      setError("Unable to create account. Try again in a moment.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

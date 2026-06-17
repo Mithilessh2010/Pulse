@@ -314,7 +314,7 @@ export const projects: Project[] = [
     team: 3,
     daysLeft: 31,
     column: "Review",
-    insight: "Onboarding can stay on track if the demo walkthrough is approved this week.",
+    insight: "Onboarding can stay on track if the product walkthrough is approved this week.",
   },
   {
     id: "investor-update-deck",
@@ -372,7 +372,7 @@ const taskRows: Task[] = [
   ["review-design-specs", "Review design specs", "Website Redesign", "Alex", "Medium", "Today 4:30 PM", "Waiting Approval", true, "Waiting", true, 4],
   ["approve-aws-estimate", "Approve AWS estimate", "Mobile App Launch", "Sam", "High", "Today 5:00 PM", "Blocked", true, "Submitted", true, 3],
   ["send-client-update", "Send client update", "Website Redesign", "Maya", "Medium", "Today 5:30 PM", "Due Today", false, "Draft", false, 2],
-  ["record-demo-walkthrough", "Record demo walkthrough", "Customer Onboarding Flow", "Jordan", "Low", "Today 6:00 PM", "Due Today", true, "Missing", false, 1],
+  ["record-product-walkthrough", "Record product walkthrough", "Customer Onboarding Flow", "Jordan", "Low", "Today 6:00 PM", "Due Today", true, "Missing", false, 1],
   ["create-onboarding-checklist", "Create onboarding checklist", "Customer Onboarding Flow", "Jordan", "Medium", "Tomorrow", "Completed", true, "Approved", false, 5],
   ["review-pricing-copy", "Review pricing page copy", "Investor Update Deck", "Sam", "Medium", "Friday", "My Tasks", false, "Draft", false, 2],
   ["upload-product-screenshots", "Upload product screenshots", "Website Redesign", "Alex", "Low", "Friday", "Waiting Approval", true, "Submitted", false, 3],
@@ -561,21 +561,20 @@ export const askPulseResponses: Record<string, string> = {
 
 export type Integration = {
   name: string;
-  status: "Coming soon" | "Not configured yet";
+  status: "Available soon" | "Not connected" | "Planned";
   description: string;
 };
 
 export const integrations: Integration[] = [
-  { name: "Google", status: "Coming soon", description: "Calendar, Drive, and identity signals." },
-  { name: "GitHub", status: "Not configured yet", description: "Pull requests, code activity, and engineering proof." },
-  { name: "Microsoft", status: "Coming soon", description: "Teams, Outlook, and Microsoft 365 workspace context." },
-  { name: "Slack", status: "Not configured yet", description: "Approvals, updates, and blocker alerts." },
-  { name: "Discord", status: "Coming soon", description: "Community and team notification support." },
-  { name: "Notion", status: "Not configured yet", description: "Docs, specs, and decision records." },
-  { name: "Jira", status: "Not configured yet", description: "Issues, sprints, and delivery state." },
-  { name: "Asana", status: "Coming soon", description: "Tasks and project timelines." },
-  { name: "QuickBooks", status: "Coming soon", description: "Expense and budget reconciliation." },
-  { name: "Xero", status: "Coming soon", description: "Finance and accounting sync." },
+  { name: "Google Calendar", status: "Available soon", description: "Meetings, agendas, and follow-up ownership." },
+  { name: "GitHub", status: "Not connected", description: "Pull requests, code activity, and engineering proof." },
+  { name: "Slack", status: "Not connected", description: "Approvals, updates, and blocker alerts." },
+  { name: "Microsoft Teams", status: "Available soon", description: "Team conversations, meetings, and workspace context." },
+  { name: "Notion", status: "Not connected", description: "Docs, specs, and decision records." },
+  { name: "Jira", status: "Not connected", description: "Issues, sprints, and delivery state." },
+  { name: "Asana", status: "Planned", description: "Tasks and project timelines." },
+  { name: "QuickBooks", status: "Planned", description: "Expense and budget reconciliation." },
+  { name: "Xero", status: "Planned", description: "Finance and accounting sync." },
 ];
 
 export const notifications = ["Maya submitted proof for review", "Website Redesign moved to At Risk", "AWS estimate needs finance approval", "Weekly leadership update is ready"];
@@ -606,4 +605,142 @@ export const features = [
   { id: "expenses", icon: "CreditCard", title: "Expense Tracking", description: "Submit, approve, and audit expenses inside the same system your projects live in.", accent: "#FBBF24" },
   { id: "standups", icon: "Radio", title: "Daily Standups", description: "Async standups that surface blockers, decisions, and work that needs attention.", accent: "#F87171" },
   { id: "ask", icon: "Sparkles", title: "Ask Pulse", description: "Ask anything about your team in plain English. Get answers, not dashboards.", accent: "#6D5DFB" },
+];
+
+export const enterprise = {
+  id: "acme-ops",
+  name: "Acme Ops",
+  plan: "Team",
+  industry: "Software",
+  size: "12 members",
+  owner: "Mithilessh",
+  health: 82,
+  activeTeams: 5,
+  activeProjects: 8,
+  pendingInvites: 3,
+  monthlySpend: 4820,
+  budgetLimit: 7500,
+};
+
+export const teams = [
+  { id: "product", name: "Product", lead: "Maya Chen", members: 4, activeProjects: ["Q3 Launch Review", "Customer Onboarding Flow"], workloadAverage: 78, health: "Needs Support", currentFocus: "Launch readiness", supportNeeded: true },
+  { id: "design", name: "Design", lead: "Alex Rivera", members: 3, activeProjects: ["Website Redesign"], workloadAverage: 69, health: "At Risk", currentFocus: "Design approval", supportNeeded: true },
+  { id: "engineering", name: "Engineering", lead: "Jordan Lee", members: 5, activeProjects: ["Mobile App Launch", "Dashboard Infrastructure"], workloadAverage: 54, health: "Stable", currentFocus: "Release readiness", supportNeeded: false },
+  { id: "operations", name: "Operations", lead: "Sam Patel", members: 2, activeProjects: ["Investor Update Deck"], workloadAverage: 55, health: "Needs Review", currentFocus: "Finance coordination", supportNeeded: false },
+  { id: "finance", name: "Finance", lead: "Priya Shah", members: 2, activeProjects: ["Budget Review"], workloadAverage: 48, health: "Stable", currentFocus: "Approval cleanup", supportNeeded: false },
+];
+
+export const members = [
+  { id: "mithilessh", name: "Mithilessh", email: "mithilessh@acmeops.com", role: "Owner", permission: "Owner", team: "Executive", status: "Available", workloadCapacity: 41, focusLoad: "Balanced", availability: "Available", supportNeeded: false, deliveryConfidence: "High", assignedTasks: 4, blockedTasks: 0, completedThisWeek: 6, suggestedAction: "Review enterprise risks and unblock finance.", initials: "M" },
+  ...teamMembers.map((member) => ({ ...member, email: `${member.id}@acmeops.com`, permission: member.id === "maya" || member.id === "sam" ? "Manager" : "Member", team: member.role.includes("Product") ? "Product" : member.role.includes("Designer") ? "Design" : member.role.includes("Engineer") ? "Engineering" : "Operations" })),
+  { id: "priya", name: "Priya Shah", email: "priya@acmeops.com", role: "Finance Lead", permission: "Admin", team: "Finance", status: "Available", workloadCapacity: 48, capacity: 48, load: 48, focusLoad: "Balanced", availability: "Available", supportNeeded: false, deliveryConfidence: "High", confidence: "High", currentTasks: 4, assignedTasks: 4, blockedTasks: 0, completedThisWeek: 5, suggestedAction: "Provide final numbers for Investor Update Deck.", initials: "PS" },
+  { id: "elena", name: "Elena Brooks", email: "elena@acmeops.com", role: "Product Manager", permission: "Member", team: "Product", status: "Available", workloadCapacity: 58, capacity: 58, load: 58, focusLoad: "Balanced", availability: "Available", supportNeeded: false, deliveryConfidence: "High", confidence: "High", currentTasks: 5, assignedTasks: 5, blockedTasks: 0, completedThisWeek: 6, suggestedAction: "Validate customer handoff flow.", initials: "EB" },
+  { id: "chris", name: "Chris Morgan", email: "chris@acmeops.com", role: "Frontend Engineer", permission: "Member", team: "Engineering", status: "Available", workloadCapacity: 52, capacity: 52, load: 52, focusLoad: "Balanced", availability: "Available", supportNeeded: false, deliveryConfidence: "High", confidence: "High", currentTasks: 5, assignedTasks: 5, blockedTasks: 1, completedThisWeek: 7, suggestedAction: "Close dashboard infrastructure QA gaps.", initials: "CM" },
+  { id: "nina", name: "Nina Park", email: "nina@acmeops.com", role: "QA Engineer", permission: "Member", team: "Engineering", status: "Available", workloadCapacity: 46, capacity: 46, load: 46, focusLoad: "Light", availability: "Open", supportNeeded: false, deliveryConfidence: "High", confidence: "High", currentTasks: 3, assignedTasks: 3, blockedTasks: 0, completedThisWeek: 8, suggestedAction: "Finish mobile launch QA matrix.", initials: "NP" },
+  { id: "omar", name: "Omar Wilson", email: "omar@acmeops.com", role: "Customer Ops", permission: "Member", team: "Operations", status: "Available", workloadCapacity: 49, capacity: 49, load: 49, focusLoad: "Balanced", availability: "Available", supportNeeded: false, deliveryConfidence: "Medium", confidence: "Medium", currentTasks: 4, assignedTasks: 4, blockedTasks: 1, completedThisWeek: 4, suggestedAction: "Follow up on client landing page feedback.", initials: "OW" },
+];
+
+export const roles = [
+  { name: "Owner", permissions: ["Manage workspace", "Invite members", "Manage teams", "Approve work", "View reports", "Submit tasks/expenses"] },
+  { name: "Admin", permissions: ["Invite members", "Manage teams", "Approve work", "View reports", "Submit tasks/expenses"] },
+  { name: "Manager", permissions: ["Manage teams", "Approve work", "View reports", "Submit tasks/expenses"] },
+  { name: "Member", permissions: ["View reports", "Submit tasks/expenses"] },
+  { name: "Viewer", permissions: ["View reports"] },
+];
+
+export const invites = [
+  { email: "ryan@acmeops.com", team: "Engineering", role: "Member", status: "Pending" },
+  { email: "sara@acmeops.com", team: "Product", role: "Manager", status: "Pending" },
+  { email: "finance.contractor@acmeops.com", team: "Finance", role: "Viewer", status: "Pending" },
+];
+
+projects.push(
+  { id: "dashboard-infrastructure", name: "Dashboard Infrastructure", progress: 61, health: "On Track", status: "on-track", statusLabel: "On Track", deadlineRisk: "Medium", budgetRisk: "Medium", owner: "Chris Morgan", ownerInitials: "CM", dueDate: "Aug 5", due: "Aug 5", predictedFinish: "Aug 4", budget: 9000, budgetLabel: "$9,000", spend: 4100, spendLabel: "$4,100", tasksTotal: 22, tasks: 22, tasksCompleted: 13, completedTasks: 13, blockers: 1, blockersCount: 1, team: 5, daysLeft: 24, column: "In Progress", insight: "Infrastructure is healthy, but QA coverage needs one more pass before launch." },
+  { id: "budget-review", name: "Budget Review", progress: 38, health: "Needs Review", status: "needs-review", statusLabel: "Needs Review", deadlineRisk: "Medium", budgetRisk: "Medium", owner: "Priya Shah", ownerInitials: "PS", dueDate: "Aug 1", due: "Aug 1", predictedFinish: "Aug 3", budget: 2500, budgetLabel: "$2,500", spend: 980, spendLabel: "$980", tasksTotal: 11, tasks: 11, tasksCompleted: 4, completedTasks: 4, blockers: 1, blockersCount: 1, team: 2, daysLeft: 20, column: "Planning", insight: "Operations input is the missing dependency for budget cleanup." },
+);
+
+tasks.push(
+  ...["Complete QA test matrix", "Confirm finance assumptions", "Draft board narrative", "Create mobile handoff checklist", "Review GitHub team seats", "Prepare onboarding email"].map((title, index) => ({
+    id: `enterprise-task-${index}`,
+    title,
+    project: index < 2 ? "Mobile App Launch" : index < 4 ? "Investor Update Deck" : "Budget Review",
+    owner: ["Nina", "Priya", "Sam", "Alex", "Chris", "Elena"][index],
+    priority: index < 2 ? "High" as const : "Medium" as const,
+    dueDate: index < 2 ? "Tomorrow" : "Next week",
+    due: index < 2 ? "Tomorrow" : "Next week",
+    status: index === 1 ? "Blocked" as const : "In Progress" as const,
+    proofRequired: index % 2 === 0,
+    proofStatus: "Draft" as const,
+    proof: "Draft",
+    blocked: index === 1,
+    subtasks: ["Confirm owner", "Attach evidence", "Update status"],
+    commentsCount: 2 + index,
+    comments: 2 + index,
+    aiReview: "Pulse recommends keeping this task visible in the manager inbox.",
+  }))
+);
+
+approvals.push(
+  { id: "mobile-qa-report", type: "Report Approval", title: "Mobile QA report ready for review.", submittedBy: "Nina", project: "Mobile App Launch", submittedAt: "3 days ago", time: "3 days ago", priority: "Medium", summary: "QA report covers release blockers and test pass rate.", attachments: ["QA report", "Test matrix"], aiReviewNote: "Report is complete but should call out missing Android test evidence.", aiNote: "Report is complete but should call out missing Android test evidence.", status: "Waiting", auditTrail: ["Submitted", "QA reviewed", "Manager notified"] },
+  { id: "budget-review-approval", type: "Expenses", title: "Budget review adjustment needs approval.", submittedBy: "Priya", project: "Budget Review", submittedAt: "3 days ago", time: "3 days ago", priority: "Medium", summary: "Finance proposes reallocating unused design budget to infrastructure.", attachments: ["Budget sheet"], aiReviewNote: "Amount is reasonable but needs operations confirmation.", aiNote: "Amount is reasonable but needs operations confirmation.", status: "Waiting", auditTrail: ["Submitted", "Finance reviewed"] },
+);
+
+expenses.push(
+  { id: "ai-workspace-credits-expense", item: "AI workspace credits", vendor: "Pulse AI", amount: "$50", amountValue: 50, category: "AI", owner: "Mithilessh", submittedBy: "Mithilessh", project: "Q3 Launch Review", status: "Pending", date: "Jun 6", receiptStatus: "Uploaded", aiCategorySuggestion: "AI" },
+  { id: "github-team-seats-expense", item: "GitHub team seats", vendor: "GitHub", amount: "$128", amountValue: 128, category: "Engineering", owner: "Chris", submittedBy: "Chris", project: "Dashboard Infrastructure", status: "Approved", date: "Jun 5", receiptStatus: "Uploaded", aiCategorySuggestion: "Engineering" },
+);
+
+blockers.push(
+  { id: "qa-test-matrix", title: "QA test matrix incomplete for Mobile App Launch", owner: "Nina", project: "Mobile App Launch", impact: "Release readiness cannot be confirmed.", suggestedNextAction: "Assign final QA owner and review by tomorrow.", age: "1 day" },
+  { id: "budget-ops-review", title: "Budget review waiting on operations", owner: "Priya", project: "Budget Review", impact: "Finance cannot close budget recommendation.", suggestedNextAction: "Ask Operations for final expense notes.", age: "2 days" },
+);
+
+export const chatRooms = [
+  { id: "company", name: "Company Updates", summary: "Leadership updates and cross-team decisions.", unread: 2 },
+  { id: "product", name: "Product Team", summary: "Launch readiness and customer onboarding work.", unread: 4 },
+  { id: "design", name: "Design Team", summary: "Website redesign proof and mobile approval.", unread: 3 },
+  { id: "engineering", name: "Engineering Team", summary: "Release readiness and infrastructure work.", unread: 1 },
+  { id: "q3-launch", name: "Q3 Launch Review", summary: "Launch proof, budget, and status updates.", unread: 2 },
+  { id: "website", name: "Website Redesign", summary: "Design is ready, mobile screenshots missing.", unread: 5 },
+  { id: "mobile", name: "Mobile App Launch", summary: "QA and release coordination.", unread: 1 },
+  { id: "finance", name: "Finance Approvals", summary: "Budget and expense approvals.", unread: 2 },
+];
+
+export const chatMessages = [
+  { author: "Alex", text: "Final mockups are ready, but I need approval before engineering starts.", time: "9:18 AM" },
+  { author: "Maya", text: "Can you attach the mobile version too?", time: "9:24 AM" },
+  { author: "Jordan", text: "Engineering can start once the design approval is cleared.", time: "9:31 AM" },
+];
+
+export const meetings = [
+  { id: "website-unblock", title: "Website Redesign Unblock", participants: ["Alex", "Maya", "Jordan"], project: "Website Redesign", duration: "20 min", why: "Design approval is delaying engineering handoff.", agenda: ["Review missing mobile proof", "Confirm approval owner", "Set handoff time"] },
+  { id: "q3-launch", title: "Q3 Launch Review", participants: ["Maya", "Sam", "Priya"], project: "Q3 Launch Review", duration: "30 min", why: "Budget risk needs leadership review.", agenda: ["Launch proof", "Budget watch", "Approval queue"] },
+  { id: "pe-sync", title: "Product/Engineering Sync", participants: ["Maya", "Jordan", "Chris"], project: "Mobile App Launch", duration: "25 min", why: "Release readiness requires product signoff.", agenda: ["QA status", "Support task handoff", "Release risks"] },
+  { id: "finance-check", title: "Finance Approval Check-in", participants: ["Sam", "Priya"], project: "Investor Update Deck", duration: "15 min", why: "Finance numbers are blocking the deck.", agenda: ["Revenue numbers", "Burn rate", "Final deadline"] },
+  { id: "weekly-leadership", title: "Weekly Leadership Update", participants: ["Mithilessh", "Maya", "Sam"], project: "Acme Ops", duration: "30 min", why: "Summarize enterprise health and risks.", agenda: ["Health", "Risks", "Next actions"] },
+];
+
+export const decisions = [
+  { id: "mobile-approval", title: "Website Redesign requires mobile approval before engineering starts", summary: "Engineering handoff waits until mobile proof is attached and approved.", owner: "Maya", project: "Website Redesign", team: "Design", date: "Jun 12", impact: "Prevents rework", source: "Design Team", status: "Active" },
+  { id: "budget-cap", title: "Q3 Launch budget remains capped at $7,500", summary: "Spend must stay within cap until leadership review.", owner: "Mithilessh", project: "Q3 Launch Review", team: "Product", date: "Jun 10", impact: "Controls launch spend", source: "Leadership Update", status: "Active" },
+  { id: "finance-block", title: "Investor Update Deck is blocked until Finance provides final numbers", summary: "No final deck narrative without revenue and burn figures.", owner: "Sam", project: "Investor Update Deck", team: "Operations", date: "Jun 11", impact: "Blocks investor reporting", source: "Finance Approvals", status: "Active" },
+  { id: "eng-support", title: "Engineering can take one support task from Product this week", summary: "Jordan has available capacity and can absorb one task from Maya.", owner: "Jordan", project: "Q3 Launch Review", team: "Engineering", date: "Jun 13", impact: "Reduces product workload risk", source: "Pulse Recommendation", status: "Active" },
+];
+
+export const playbooks = [
+  { id: "launch-checklist", name: "Launch Checklist", ownerRole: "Product Lead", estimatedTime: "45 min", requiredProof: "Launch plan, proof screenshots", approvalPoints: 3, steps: ["Confirm scope", "Review risks", "Approve proof", "Publish update"] },
+  { id: "design-review", name: "Design Review Process", ownerRole: "Designer", estimatedTime: "30 min", requiredProof: "Desktop and mobile screenshots", approvalPoints: 2, steps: ["Attach proof", "Review breakpoints", "Request approval"] },
+  { id: "expense-approval", name: "Expense Approval Process", ownerRole: "Operations", estimatedTime: "15 min", requiredProof: "Receipt", approvalPoints: 1, steps: ["Upload receipt", "Check category", "Approve or reject"] },
+  { id: "client-update", name: "Client Update Workflow", ownerRole: "Product Lead", estimatedTime: "25 min", requiredProof: "Draft update", approvalPoints: 1, steps: ["Draft update", "Review risk", "Send"] },
+  { id: "hiring-sprint", name: "Hiring Sprint Workflow", ownerRole: "Operations", estimatedTime: "60 min", requiredProof: "Candidate tracker", approvalPoints: 2, steps: ["Define role", "Review pipeline", "Approve next round"] },
+  { id: "leadership-report", name: "Weekly Leadership Report", ownerRole: "Manager", estimatedTime: "20 min", requiredProof: "Workspace summary", approvalPoints: 1, steps: ["Summarize health", "List risks", "Publish update"] },
+];
+
+export const enterpriseNotifications = [
+  { id: "n1", title: "Approval waiting", description: "Maya's Q3 dashboard proof needs review.", type: "Approval", time: "18 min ago", unread: true, action: "Review" },
+  { id: "n2", title: "Expense submitted", description: "AWS estimate needs finance approval.", type: "Expense", time: "1 hr ago", unread: true, action: "Open" },
+  { id: "n3", title: "Project at risk", description: "Website Redesign is behind pace.", type: "Risk", time: "2 hr ago", unread: true, action: "View" },
+  { id: "n4", title: "Team support needed", description: "Product needs support this week.", type: "Team", time: "Today", unread: false, action: "Reassign" },
+  { id: "n5", title: "Invite pending", description: "Ryan is waiting to join Engineering.", type: "Invite", time: "Yesterday", unread: false, action: "Resend" },
+  { id: "n6", title: "Report generated", description: "Weekly leadership update is ready.", type: "Report", time: "Yesterday", unread: false, action: "Copy" },
 ];

@@ -1,0 +1,553 @@
+"use client";
+
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  activityFeed as seedActivityFeed,
+  approvals as seedApprovals,
+  blockers as seedBlockers,
+  chatMessages as seedChatMessages,
+  chatRooms as seedChatRooms,
+  decisions as seedDecisions,
+  enterprise as seedEnterprise,
+  enterpriseNotifications as seedNotifications,
+  expenses as seedExpenses,
+  invites as seedInvites,
+  meetings as seedMeetings,
+  members as seedMembers,
+  playbooks as seedPlaybooks,
+  projects as seedProjects,
+  reports as seedReports,
+  tasks as seedTasks,
+  teams as seedTeams,
+  teamMembers as seedTeamMembers,
+  type Approval,
+  type Blocker,
+  type Expense,
+  type Project,
+  type Task,
+  type TeamMember,
+} from "@/lib/mockData";
+
+export const STORAGE_KEY = "pulse-demo-state-v1";
+export const STORE_VERSION = 1;
+
+type Enterprise = typeof seedEnterprise;
+type Team = (typeof seedTeams)[number];
+type Member = (typeof seedMembers)[number];
+type Invite = (typeof seedInvites)[number];
+type Meeting = (typeof seedMeetings)[number] & {
+  generatedAgenda?: string[];
+  notesComplete?: boolean;
+  followUpTaskIds?: string[];
+};
+type Decision = (typeof seedDecisions)[number];
+type Playbook = (typeof seedPlaybooks)[number];
+type Notification = (typeof seedNotifications)[number];
+
+export type ChatMessage = {
+  id: string;
+  roomId: string;
+  sender: string;
+  senderInitials: string;
+  body: string;
+  createdAt: string;
+  type?: "message" | "system" | "ai-summary";
+  convertedToTaskId?: string;
+  pinnedAsDecisionId?: string;
+};
+
+export type ChatRoom = {
+  id: string;
+  name: string;
+  description: string;
+  linkedProject?: string;
+  linkedTeam?: string;
+  unreadCount: number;
+  isRead: boolean;
+  aiSummary?: string;
+  pinnedDecisionIds: string[];
+  messages: ChatMessage[];
+};
+
+export type InboxItem = {
+  id: string;
+  type: string;
+  title: string;
+  priority: string;
+  time: string;
+  action: string;
+  done: boolean;
+  snoozed?: boolean;
+  linkedId?: string;
+};
+
+export type GeneratedReport = {
+  id: string;
+  type: string;
+  tone: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  copied?: boolean;
+};
+
+export type AutopilotAction = {
+  id: string;
+  category: string;
+  title: string;
+  reason: string;
+  relatedObject: string;
+  riskLevel: string;
+  confidence: number;
+  status: string;
+};
+
+export type AutopilotPlan = {
+  id: string;
+  command: string;
+  actions: AutopilotAction[];
+  createdAt: string;
+};
+
+type SettingsState = {
+  theme: string;
+  density: string;
+  reduceMotion: boolean;
+  sidebarStyle: string;
+  toggles: Record<string, boolean>;
+};
+
+type PulseState = {
+  hasHydrated: boolean;
+  enterprise: Enterprise;
+  teams: Team[];
+  members: Member[];
+  teamMembers: TeamMember[];
+  invites: Invite[];
+  projects: Project[];
+  tasks: Task[];
+  approvals: (Approval & { resolvedAt?: string; resolvedBy?: string; linkedTaskId?: string })[];
+  expenses: Expense[];
+  blockers: Blocker[];
+  inboxItems: InboxItem[];
+  notifications: Notification[];
+  chatRooms: ChatRoom[];
+  meetings: Meeting[];
+  decisions: Decision[];
+  playbooks: Playbook[];
+  reports: string[];
+  generatedReports: GeneratedReport[];
+  activityFeed: string[];
+  auditTrail: string[];
+  settings: SettingsState;
+  generatedAiSummaries: Record<string, string>;
+  autopilotPlans: AutopilotPlan[];
+  selectedTheme: string;
+  setHasHydrated: (value: boolean) => void;
+  resetDemoData: () => void;
+  markNotificationRead: (notificationId: string) => void;
+  markAllNotificationsRead: () => void;
+  clearNotifications: () => void;
+  markInboxDone: (itemId: string) => void;
+  snoozeInboxItem: (itemId: string) => void;
+  sendChatMessage: (roomId: string, body: string) => ChatMessage | null;
+  markRoomRead: (roomId: string) => void;
+  summarizeChatRoom: (roomId: string) => string;
+  convertMessageToTask: (roomId: string, messageId: string) => string | null;
+  pinMessageAsDecision: (roomId: string, messageId: string) => string | null;
+  approveApproval: (approvalId: string) => void;
+  requestApprovalChanges: (approvalId: string) => void;
+  approveExpense: (expenseId: string) => void;
+  rejectExpense: (expenseId: string) => void;
+  submitExpense: (data?: Partial<Expense>) => string;
+  createTask: (data: Partial<Task>) => string;
+  updateTask: (taskId: string, updates: Partial<Task>) => void;
+  toggleSubtask: (taskId: string, subtaskId: string) => void;
+  submitTaskProof: (taskId: string, proofData?: string) => void;
+  completeTask: (taskId: string) => void;
+  reassignTask: (taskId: string, newOwner: string) => void;
+  createProject: (data?: Partial<Project>) => string;
+  updateProject: (projectId: string, updates: Partial<Project>) => void;
+  createTeam: (data?: Partial<Team>) => string;
+  inviteMember: (data?: Partial<Invite>) => string;
+  updateMember: (memberId: string, updates: Partial<Member>) => void;
+  generateReport: (type?: string, tone?: string) => string;
+  saveGeneratedReport: (report: GeneratedReport) => void;
+  copyReport: (reportId: string) => void;
+  saveAiSummary: (key: string, summary: string) => void;
+  generateAutopilotPlan: (command: string, actions: AutopilotAction[]) => string;
+  approveAutopilotAction: (actionId: string) => void;
+  skipAutopilotAction: (actionId: string) => void;
+  editAutopilotAction: (actionId: string, updates: Partial<AutopilotAction>) => void;
+  runSelectedAutopilotActions: (actionIds: string[]) => void;
+  generateMeetingAgenda: (meetingId: string) => void;
+  createMeetingFollowUpTasks: (meetingId: string) => void;
+  markMeetingNotesComplete: (meetingId: string) => void;
+  addDecision: (data?: Partial<Decision>) => string;
+  updateDecision: (decisionId: string, updates: Partial<Decision>) => void;
+  updateSettings: (updates: Partial<SettingsState>) => void;
+  toggleSetting: (key: string) => void;
+  setSelectedTheme: (theme: string) => void;
+};
+
+function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function id(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function nowLabel() {
+  return new Date().toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+const themeLabels: Record<string, string> = {
+  midnight: "Midnight Pulse",
+  graphite: "Graphite",
+  aurora: "Aurora",
+  light: "Light Executive",
+};
+
+function initials(name: string) {
+  return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "M";
+}
+
+function buildInitialChatRooms(): ChatRoom[] {
+  return seedChatRooms.map((room, roomIndex) => {
+    const roomMessages = room.id === "website" || roomIndex === 0 ? seedChatMessages : seedChatMessages.slice(0, 1);
+    return {
+      id: room.id,
+      name: room.name,
+      description: room.summary,
+      linkedProject: room.name.includes("Website") ? "Website Redesign" : room.name.includes("Q3") ? "Q3 Launch Review" : undefined,
+      linkedTeam: room.name.includes("Design") ? "Design" : room.name.includes("Engineering") ? "Engineering" : undefined,
+      unreadCount: room.unread,
+      isRead: room.unread === 0,
+      aiSummary: room.id === "website" ? "Design is ready, but mobile screenshots are missing. Engineering is waiting on approval before starting implementation." : room.summary,
+      pinnedDecisionIds: [],
+      messages: roomMessages.map((message, index) => ({
+        id: `${room.id}-message-${index}`,
+        roomId: room.id,
+        sender: message.author,
+        senderInitials: initials(message.author),
+        body: message.text,
+        createdAt: message.time,
+        type: "message",
+      })),
+    };
+  });
+}
+
+function buildInboxItems(): InboxItem[] {
+  return [
+    ...seedApprovals.slice(0, 4).map((item) => ({ id: `approval-${item.id}`, linkedId: item.id, type: item.type, title: item.title, priority: item.priority, time: item.time, action: "Review approval", done: false })),
+    ...seedBlockers.slice(0, 3).map((item) => ({ id: `blocker-${item.id}`, linkedId: item.id, type: "Blocker", title: item.title, priority: "High", time: item.age, action: item.suggestedNextAction, done: false })),
+    ...seedInvites.map((item) => ({ id: `invite-${item.email}`, linkedId: item.email, type: "Pending invites", title: `${item.email} waiting to join ${item.team}`, priority: "Medium", time: "Pending", action: "Resend invite", done: false })),
+  ];
+}
+
+const defaultSettings: SettingsState = {
+  theme: "Midnight Pulse",
+  density: "Comfortable",
+  reduceMotion: false,
+  sidebarStyle: "Expanded",
+  toggles: {
+    "Daily briefing": true,
+    "Approval reminders": true,
+    "Budget alerts": true,
+    "Blocker alerts": true,
+    "Weekly reports": true,
+    "Team support alerts": true,
+    "Ask Pulse enabled": true,
+    "Autopilot suggestions enabled": true,
+    "Require manager confirmation": true,
+    "Include expenses in AI context": true,
+    "Include team workload in AI context": true,
+    "Include approval queue": true,
+    "Save AI activity to audit trail": true,
+    "Reduce motion": false,
+  },
+};
+
+function initialData() {
+  return {
+    hasHydrated: false,
+    enterprise: clone(seedEnterprise),
+    teams: clone(seedTeams),
+    members: clone(seedMembers),
+    teamMembers: clone(seedTeamMembers),
+    invites: clone(seedInvites),
+    projects: clone(seedProjects),
+    tasks: clone(Array.from(seedTasks)),
+    approvals: clone(seedApprovals),
+    expenses: clone(Array.from(seedExpenses)),
+    blockers: clone(seedBlockers),
+    inboxItems: buildInboxItems(),
+    notifications: clone(seedNotifications),
+    chatRooms: buildInitialChatRooms(),
+    meetings: clone(seedMeetings),
+    decisions: clone(seedDecisions),
+    playbooks: clone(seedPlaybooks),
+    reports: clone(seedReports),
+    generatedReports: [],
+    activityFeed: clone(seedActivityFeed),
+    auditTrail: ["Demo workspace seeded from sample data."],
+    settings: clone(defaultSettings),
+    generatedAiSummaries: {},
+    autopilotPlans: [],
+    selectedTheme: "midnight",
+  };
+}
+
+export const usePulseStore = create<PulseState>()(
+  persist(
+    (set, get) => ({
+      ...initialData(),
+      setHasHydrated: (value) => set({ hasHydrated: value }),
+      resetDemoData: () => set({ ...initialData(), hasHydrated: true }),
+      markNotificationRead: (notificationId) => set((state) => ({ notifications: state.notifications.map((item) => item.id === notificationId ? { ...item, unread: false } : item) })),
+      markAllNotificationsRead: () => set((state) => ({ notifications: state.notifications.map((item) => ({ ...item, unread: false })) })),
+      clearNotifications: () => set({ notifications: [] }),
+      markInboxDone: (itemId) => set((state) => ({ inboxItems: state.inboxItems.map((item) => item.id === itemId ? { ...item, done: true } : item) })),
+      snoozeInboxItem: (itemId) => set((state) => ({ inboxItems: state.inboxItems.map((item) => item.id === itemId ? { ...item, done: true, snoozed: true } : item) })),
+      sendChatMessage: (roomId, body) => {
+        const clean = body.trim();
+        if (!clean) return null;
+        const message: ChatMessage = { id: id("message"), roomId, sender: "Mithilessh", senderInitials: "M", body: clean, createdAt: "Now", type: "message" };
+        set((state) => ({
+          chatRooms: state.chatRooms.map((room) => room.id === roomId ? {
+            ...room,
+            description: clean,
+            aiSummary: room.aiSummary,
+            isRead: true,
+            unreadCount: 0,
+            messages: [...room.messages, message],
+          } : room),
+          activityFeed: [`Mithilessh sent a message in ${state.chatRooms.find((room) => room.id === roomId)?.name ?? "Work Rooms"}`, ...state.activityFeed],
+        }));
+        return message;
+      },
+      markRoomRead: (roomId) => set((state) => ({ chatRooms: state.chatRooms.map((room) => room.id === roomId ? { ...room, isRead: true, unreadCount: 0 } : room) })),
+      summarizeChatRoom: (roomId) => {
+        const room = get().chatRooms.find((item) => item.id === roomId);
+        const summary = `Summary for ${room?.name ?? "room"}: ${(room?.messages ?? []).slice(-3).map((message) => message.body).join(" ")} Key dependencies remain visible for manager review.`;
+        set((state) => ({
+          chatRooms: state.chatRooms.map((item) => item.id === roomId ? { ...item, aiSummary: summary } : item),
+          generatedAiSummaries: { ...state.generatedAiSummaries, [`chat-${roomId}`]: summary },
+          auditTrail: [`${nowLabel()} · Chat room summarized: ${room?.name ?? roomId}`, ...state.auditTrail],
+        }));
+        return summary;
+      },
+      convertMessageToTask: (roomId, messageId) => {
+        const room = get().chatRooms.find((item) => item.id === roomId);
+        const message = room?.messages.find((item) => item.id === messageId);
+        if (!room || !message) return null;
+        const taskId = get().createTask({
+          title: `Follow up: ${message.body.slice(0, 54)}`,
+          project: room.linkedProject ?? "Q3 Launch Review",
+          owner: "Mithilessh",
+          priority: "Medium",
+          dueDate: "Tomorrow",
+          due: "Tomorrow",
+          status: "In Progress",
+          proofRequired: false,
+          proofStatus: "Draft",
+          proof: "Draft",
+          blocked: false,
+          subtasks: ["Confirm owner", "Add context", "Share update"],
+          commentsCount: 0,
+          comments: 0,
+          aiReview: "Created from a Work Rooms message.",
+        });
+        set((state) => ({
+          chatRooms: state.chatRooms.map((item) => item.id === roomId ? { ...item, messages: item.messages.map((chatMessage) => chatMessage.id === messageId ? { ...chatMessage, convertedToTaskId: taskId } : chatMessage) } : item),
+        }));
+        return taskId;
+      },
+      pinMessageAsDecision: (roomId, messageId) => {
+        const room = get().chatRooms.find((item) => item.id === roomId);
+        const message = room?.messages.find((item) => item.id === messageId);
+        if (!room || !message) return null;
+        const decisionId = get().addDecision({
+          title: message.body,
+          summary: `Pinned from ${room.name}.`,
+          owner: message.sender,
+          project: room.linkedProject ?? "Acme Ops",
+          team: room.linkedTeam ?? "Leadership",
+          date: "Today",
+          impact: "Keeps the room decision visible",
+          source: room.name,
+          status: "Active",
+        });
+        set((state) => ({
+          chatRooms: state.chatRooms.map((item) => item.id === roomId ? {
+            ...item,
+            pinnedDecisionIds: Array.from(new Set([...item.pinnedDecisionIds, decisionId])),
+            messages: item.messages.map((chatMessage) => chatMessage.id === messageId ? { ...chatMessage, pinnedAsDecisionId: decisionId } : chatMessage),
+          } : item),
+        }));
+        return decisionId;
+      },
+      approveApproval: (approvalId) => set((state) => ({
+        approvals: state.approvals.map((item) => item.id === approvalId ? { ...item, status: "Approved", resolvedAt: nowLabel(), resolvedBy: "Mithilessh", auditTrail: [...item.auditTrail, "Approved"] } : item),
+        tasks: state.tasks.map((task) => task.id === state.approvals.find((item) => item.id === approvalId)?.linkedTaskId ? { ...task, proofStatus: "Approved", proof: "Approved" } : task),
+        inboxItems: state.inboxItems.map((item) => item.linkedId === approvalId ? { ...item, done: true } : item),
+        activityFeed: [`Approval approved: ${state.approvals.find((item) => item.id === approvalId)?.title ?? approvalId}`, ...state.activityFeed],
+        auditTrail: [`${nowLabel()} · Approval approved: ${approvalId}`, ...state.auditTrail],
+      })),
+      requestApprovalChanges: (approvalId) => set((state) => ({
+        approvals: state.approvals.map((item) => item.id === approvalId ? { ...item, status: "Changes Requested", resolvedAt: nowLabel(), resolvedBy: "Mithilessh", auditTrail: [...item.auditTrail, "Changes requested"] } : item),
+        activityFeed: [`Changes requested: ${state.approvals.find((item) => item.id === approvalId)?.title ?? approvalId}`, ...state.activityFeed],
+        auditTrail: [`${nowLabel()} · Changes requested: ${approvalId}`, ...state.auditTrail],
+      })),
+      approveExpense: (expenseId) => set((state) => ({
+        expenses: state.expenses.map((expense) => expense.id === expenseId ? { ...expense, status: "Approved" } : expense),
+        activityFeed: [`Expense approved: ${state.expenses.find((expense) => expense.id === expenseId)?.item ?? expenseId}`, ...state.activityFeed],
+        auditTrail: [`${nowLabel()} · Expense approved: ${expenseId}`, ...state.auditTrail],
+      })),
+      rejectExpense: (expenseId) => set((state) => ({
+        expenses: state.expenses.map((expense) => expense.id === expenseId ? { ...expense, status: "Rejected" } : expense),
+        activityFeed: [`Expense rejected: ${state.expenses.find((expense) => expense.id === expenseId)?.item ?? expenseId}`, ...state.activityFeed],
+        auditTrail: [`${nowLabel()} · Expense rejected: ${expenseId}`, ...state.auditTrail],
+      })),
+      submitExpense: (data = {}) => {
+        const expenseId = id("expense");
+        const expense: Expense = {
+          id: expenseId,
+          item: data.item ?? "Workspace expense",
+          vendor: data.vendor ?? "New vendor",
+          amount: data.amount ?? "$120",
+          amountValue: data.amountValue ?? 120,
+          category: data.category ?? "Operations",
+          owner: data.owner ?? "Mithilessh",
+          submittedBy: data.submittedBy ?? "Mithilessh",
+          project: data.project ?? "Q3 Launch Review",
+          status: data.status ?? "Pending",
+          date: "Today",
+          receiptStatus: data.receiptStatus ?? "Uploaded",
+          aiCategorySuggestion: data.aiCategorySuggestion ?? data.category ?? "Operations",
+        };
+        set((state) => ({ expenses: [expense, ...state.expenses], activityFeed: [`Expense submitted: ${expense.item}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Expense submitted: ${expenseId}`, ...state.auditTrail] }));
+        return expenseId;
+      },
+      createTask: (data) => {
+        const taskId = data.id ?? id("task");
+        const task: Task = {
+          id: taskId,
+          title: data.title ?? "New workspace task",
+          project: data.project ?? "Q3 Launch Review",
+          owner: data.owner ?? "Mithilessh",
+          priority: data.priority ?? "Medium",
+          dueDate: data.dueDate ?? "Tomorrow",
+          due: data.due ?? data.dueDate ?? "Tomorrow",
+          status: data.status ?? "In Progress",
+          proofRequired: data.proofRequired ?? false,
+          proofStatus: data.proofStatus ?? "Draft",
+          proof: data.proof ?? data.proofStatus ?? "Draft",
+          blocked: data.blocked ?? false,
+          subtasks: data.subtasks ?? ["Confirm owner", "Attach context", "Share update"],
+          commentsCount: data.commentsCount ?? 0,
+          comments: data.comments ?? 0,
+          aiReview: data.aiReview ?? "Created in Pulse.",
+        };
+        set((state) => ({ tasks: [task, ...state.tasks], activityFeed: [`Task created: ${task.title}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Task created: ${taskId}`, ...state.auditTrail] }));
+        return taskId;
+      },
+      updateTask: (taskId, updates) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, ...updates } : task), auditTrail: [`${nowLabel()} · Task updated: ${taskId}`, ...state.auditTrail] })),
+      toggleSubtask: (taskId, subtaskId) => set((state) => ({ auditTrail: [`${nowLabel()} · Subtask checked: ${taskId}/${subtaskId}`, ...state.auditTrail] })),
+      submitTaskProof: (taskId, proofData = "Submitted proof") => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, proofStatus: "Submitted", proof: proofData } : task), activityFeed: [`Task proof submitted: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
+      completeTask: (taskId) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, status: "Completed" } : task), activityFeed: [`Task completed: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
+      reassignTask: (taskId, newOwner) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, owner: newOwner } : task), auditTrail: [`${nowLabel()} · Task reassigned: ${taskId} to ${newOwner}`, ...state.auditTrail] })),
+      createProject: (data = {}) => {
+        const projectId = data.id ?? id("project");
+        const project: Project = { ...get().projects[0], ...data, id: projectId, name: data.name ?? "New workspace project", progress: data.progress ?? 0, tasksCompleted: data.tasksCompleted ?? 0, completedTasks: data.completedTasks ?? 0, tasks: data.tasks ?? 0, tasksTotal: data.tasksTotal ?? 0, column: data.column ?? "Planning" };
+        set((state) => ({ projects: [project, ...state.projects], activityFeed: [`Project created: ${project.name}`, ...state.activityFeed] }));
+        return projectId;
+      },
+      updateProject: (projectId, updates) => set((state) => ({ projects: state.projects.map((project) => project.id === projectId ? { ...project, ...updates } : project) })),
+      createTeam: (data = {}) => {
+        const teamId = data.id ?? id("team");
+        const team = { ...get().teams[0], ...data, id: teamId, name: data.name ?? "New Workspace Team", lead: data.lead ?? "Mithilessh", members: data.members ?? 1, activeProjects: data.activeProjects ?? [], workloadAverage: data.workloadAverage ?? 0, health: data.health ?? "Stable", currentFocus: data.currentFocus ?? "Workspace setup", supportNeeded: data.supportNeeded ?? false };
+        set((state) => ({ teams: [team, ...state.teams], activityFeed: [`Team created: ${team.name}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Team created: ${teamId}`, ...state.auditTrail] }));
+        return teamId;
+      },
+      inviteMember: (data = {}) => {
+        const email = data.email ?? `new.member.${Date.now()}@acmeops.com`;
+        const invite = { email, team: data.team ?? "Product", role: data.role ?? "Member", status: data.status ?? "Pending" };
+        set((state) => ({ invites: [invite, ...state.invites], inboxItems: [{ id: `invite-${email}`, linkedId: email, type: "Pending invites", title: `${email} waiting to join ${invite.team}`, priority: "Medium", time: "Pending", action: "Resend invite", done: false }, ...state.inboxItems], activityFeed: [`Invite sent: ${email}`, ...state.activityFeed] }));
+        return email;
+      },
+      updateMember: (memberId, updates) => set((state) => ({ members: state.members.map((member) => member.id === memberId ? ({ ...member, ...updates } as Member) : member) })),
+      generateReport: (type = "Weekly Summary", tone = "Executive") => {
+        const reportId = id("report");
+        const report: GeneratedReport = {
+          id: reportId,
+          type,
+          tone,
+          title: `${type} · ${nowLabel()}`,
+          body: "This week, the team completed priority work, moved Q3 Launch forward, and kept budget usage controlled. Website Redesign remains the highest-risk project and needs design approval.",
+          createdAt: nowLabel(),
+        };
+        set((state) => ({ generatedReports: [report, ...state.generatedReports], activityFeed: [`Report generated: ${report.title}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Report generated: ${reportId}`, ...state.auditTrail] }));
+        return reportId;
+      },
+      saveGeneratedReport: (report) => set((state) => ({ generatedReports: [report, ...state.generatedReports] })),
+      copyReport: (reportId) => set((state) => ({ generatedReports: state.generatedReports.map((report) => report.id === reportId ? { ...report, copied: true } : report) })),
+      saveAiSummary: (key, summary) => set((state) => ({ generatedAiSummaries: { ...state.generatedAiSummaries, [key]: summary } })),
+      generateAutopilotPlan: (command, actions) => {
+        const planId = id("autopilot-plan");
+        const plan = { id: planId, command, actions, createdAt: nowLabel() };
+        set((state) => ({ autopilotPlans: [plan, ...state.autopilotPlans], auditTrail: [`${nowLabel()} · Autopilot plan generated`, ...state.auditTrail] }));
+        return planId;
+      },
+      approveAutopilotAction: (actionId) => get().editAutopilotAction(actionId, { status: "Ready to run" }),
+      skipAutopilotAction: (actionId) => get().editAutopilotAction(actionId, { status: "Skipped" }),
+      editAutopilotAction: (actionId, updates) => set((state) => ({ autopilotPlans: state.autopilotPlans.map((plan) => ({ ...plan, actions: plan.actions.map((action) => action.id === actionId ? { ...action, ...updates } : action) })) })),
+      runSelectedAutopilotActions: (actionIds) => set((state) => ({ autopilotPlans: state.autopilotPlans.map((plan) => ({ ...plan, actions: plan.actions.map((action) => actionIds.includes(action.id) ? { ...action, status: "Completed" } : action) })) })),
+      generateMeetingAgenda: (meetingId) => set((state) => ({ meetings: state.meetings.map((meeting) => meeting.id === meetingId ? { ...meeting, generatedAgenda: [...meeting.agenda, "Confirm owners", "Publish follow-ups"] } : meeting) })),
+      createMeetingFollowUpTasks: (meetingId) => {
+        const meeting = get().meetings.find((item) => item.id === meetingId);
+        if (!meeting) return;
+        const taskId = get().createTask({ title: `Follow up from ${meeting.title}`, project: meeting.project, owner: "Mithilessh", status: "In Progress" });
+        set((state) => ({ meetings: state.meetings.map((item) => item.id === meetingId ? { ...item, followUpTaskIds: [...(item.followUpTaskIds ?? []), taskId] } : item) }));
+      },
+      markMeetingNotesComplete: (meetingId) => set((state) => ({ meetings: state.meetings.map((meeting) => meeting.id === meetingId ? { ...meeting, notesComplete: true } : meeting) })),
+      addDecision: (data = {}) => {
+        const decisionId = data.id ?? id("decision");
+        const decision = { ...get().decisions[0], ...data, id: decisionId, title: data.title ?? "New workspace decision", date: data.date ?? "Today" };
+        set((state) => ({ decisions: [decision, ...state.decisions], activityFeed: [`Decision added: ${decision.title}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Decision added: ${decisionId}`, ...state.auditTrail] }));
+        return decisionId;
+      },
+      updateDecision: (decisionId, updates) => set((state) => ({ decisions: state.decisions.map((decision) => decision.id === decisionId ? { ...decision, ...updates } : decision) })),
+      updateSettings: (updates) => set((state) => ({ settings: { ...state.settings, ...updates, toggles: updates.toggles ? { ...state.settings.toggles, ...updates.toggles } : state.settings.toggles } })),
+      toggleSetting: (key) => set((state) => ({ settings: { ...state.settings, reduceMotion: key === "Reduce motion" ? !state.settings.reduceMotion : state.settings.reduceMotion, toggles: { ...state.settings.toggles, [key]: !state.settings.toggles[key] } } })),
+      setSelectedTheme: (theme) => set((state) => ({ selectedTheme: theme, settings: { ...state.settings, theme: themeLabels[theme] ?? theme } })),
+    }),
+    {
+      name: STORAGE_KEY,
+      version: STORE_VERSION,
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined") throw new Error("Pulse demo store is browser-only.");
+        return window.localStorage;
+      }),
+      partialize: ({ hasHydrated: _hasHydrated, ...state }) => state,
+      migrate: (persistedState, version) => {
+        if (version !== STORE_VERSION || !persistedState || typeof persistedState !== "object") return initialData();
+        return { ...initialData(), ...(persistedState as object) };
+      },
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          usePulseStore.setState({ ...initialData(), hasHydrated: true });
+          return;
+        }
+        state?.setHasHydrated(true);
+      },
+    },
+  ),
+);
+
+export function usePulseHydrated() {
+  return usePulseStore((state) => state.hasHydrated);
+}

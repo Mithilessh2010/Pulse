@@ -20,7 +20,7 @@ const plans = [
     monthly: "$0",
     yearly: "$0",
     suffix: "",
-    subtitle: "For solo builders and tiny teams testing Pulse.",
+    subtitle: "For solo builders and tiny teams starting with Pulse.",
     cta: "Start Free",
     featured: false,
     features: [
@@ -29,7 +29,7 @@ const plans = [
       "2 active projects",
       "Basic tasks",
       "Basic dashboard",
-      "Demo Ask Pulse prompts",
+      "Guided Ask Pulse prompts",
       "Community support",
     ],
   },
@@ -116,7 +116,7 @@ const comparisonRows = [
   ["AI morning briefing", false, true, true, true],
   ["Proof-based approvals", false, true, true, true],
   ["Team workload view", false, true, true, true],
-  ["Ask Pulse", "Demo prompts", false, true, true],
+  ["Ask Pulse", "Guided prompts", false, true, true],
   ["Expense tracking", false, false, true, true],
   ["Budget tracking", false, false, true, true],
   ["Reports", "Basic", "Basic", "Weekly leadership", "Advanced"],
@@ -128,7 +128,7 @@ const comparisonRows = [
 const faqs = [
   [
     "Can I use Pulse for free?",
-    "Yes. The Free plan is designed for solo builders and tiny teams that want to test the workflow before upgrading.",
+    "Yes. The Free plan is designed for solo builders and tiny teams that want to try the workflow before upgrading.",
   ],
   ["Do I need a credit card to start?", "No. The Free plan should not require a credit card."],
   ["Is billing per user?", "Yes. Paid plans are priced per active workspace user."],

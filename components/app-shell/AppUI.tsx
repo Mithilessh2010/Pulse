@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, FileText, Info, Loader2, Sparkles } from "lucide-react";
+import { FileText, Info, Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 export const containerVariants = {
@@ -174,7 +174,7 @@ export function AskPulseCard({ answer = askFallback }: { answer?: string }) {
         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#00B4D8]">
           <Sparkles className="h-3.5 w-3.5" />
           {isLoading ? "Thinking" : "Pulse answer"}
-          {!isLoading ? <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-[#9BA8C7]">{source === "openrouter" ? "Live AI" : source === "error" ? "Fallback" : "Demo-safe"}</span> : null}
+          {!isLoading ? <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-[#9BA8C7]">{source === "openrouter" ? "Live AI" : source === "error" ? "Workspace answer" : "Workspace answer"}</span> : null}
         </div>
         {isLoading ? <LoadingSpinner label="Reading project, approval, workload, and expense context..." /> : <p className="text-sm leading-6 text-[#D7E1F7]">{response}</p>}
       </motion.div>
@@ -197,14 +197,5 @@ export function ActivityFeed({ items }: { items: string[] }) {
         ))}
       </div>
     </DashboardCard>
-  );
-}
-
-export function DemoButton({ children }: { children: React.ReactNode }) {
-  return (
-    <button className="inline-flex items-center gap-2 rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#7C6EFC]">
-      <Check className="h-3.5 w-3.5" />
-      {children}
-    </button>
   );
 }
