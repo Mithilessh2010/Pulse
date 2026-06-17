@@ -51,6 +51,36 @@
       "static/chunks/main-app.js",
       "static/chunks/app/app/layout.js"
     ],
+    "/app/autopilot/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/autopilot/page.js"
+    ],
+    "/app/inbox/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/inbox/page.js"
+    ],
+    "/app/chat/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/chat/page.js"
+    ],
+    "/app/meetings/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/meetings/page.js"
+    ],
+    "/app/teams/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/teams/page.js"
+    ],
+    "/app/team/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/team/page.js"
+    ],
     "/app/projects/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -71,11 +101,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/app/expenses/page.js"
     ],
-    "/app/team/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/app/team/page.js"
-    ],
     "/app/ask/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -86,10 +111,35 @@
       "static/chunks/main-app.js",
       "static/chunks/app/app/reports/page.js"
     ],
+    "/app/decisions/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/decisions/page.js"
+    ],
+    "/app/playbooks/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/playbooks/page.js"
+    ],
+    "/app/import/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/import/page.js"
+    ],
+    "/app/onboarding/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/onboarding/page.js"
+    ],
     "/app/settings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/app/settings/page.js"
+    ],
+    "/app/dev/qa/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/app/dev/qa/page.js"
     ]
   }
 }
