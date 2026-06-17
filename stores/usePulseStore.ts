@@ -110,6 +110,23 @@ export type AutopilotPlan = {
   createdAt: string;
 };
 
+export type CallRecord = {
+  id: string;
+  title: string;
+  participants: string[];
+  relatedProject?: string;
+  relatedTeam?: string;
+  reason: string;
+  duration: string;
+  status: "Suggested" | "Scheduled" | "In progress" | "Completed";
+  agenda?: string[];
+  notes: string[];
+  decisions: string[];
+  actionItemIds: string[];
+  startedAt?: string;
+  endedAt?: string;
+};
+
 type SettingsState = {
   theme: string;
   density: string;
@@ -133,6 +150,7 @@ type PulseState = {
   inboxItems: InboxItem[];
   notifications: Notification[];
   chatRooms: ChatRoom[];
+  calls: CallRecord[];
   meetings: Meeting[];
   decisions: Decision[];
   playbooks: Playbook[];
@@ -153,6 +171,7 @@ type PulseState = {
   snoozeInboxItem: (itemId: string) => void;
   sendChatMessage: (roomId: string, body: string) => ChatMessage | null;
   markRoomRead: (roomId: string) => void;
+  startHuddleFromRoom: (roomId: string) => string | null;
   summarizeChatRoom: (roomId: string) => string;
   convertMessageToTask: (roomId: string, messageId: string) => string | null;
   pinMessageAsDecision: (roomId: string, messageId: string) => string | null;
@@ -181,6 +200,12 @@ type PulseState = {
   skipAutopilotAction: (actionId: string) => void;
   editAutopilotAction: (actionId: string, updates: Partial<AutopilotAction>) => void;
   runSelectedAutopilotActions: (actionIds: string[]) => void;
+  createCall: (data?: Partial<CallRecord>) => string;
+  startCall: (callId: string) => void;
+  endCall: (callId: string) => void;
+  generateCallAgenda: (callId: string) => void;
+  createCallFollowUpTasks: (callId: string) => void;
+  updateCallNotes: (callId: string, notes: string[]) => void;
   generateMeetingAgenda: (meetingId: string) => void;
   createMeetingFollowUpTasks: (meetingId: string) => void;
   markMeetingNotesComplete: (meetingId: string) => void;
@@ -248,6 +273,53 @@ function buildInboxItems(): InboxItem[] {
   ];
 }
 
+function buildInitialCalls(): CallRecord[] {
+  return [
+    {
+      id: "call-website-redesign-unblock",
+      title: "Website Redesign Unblock",
+      participants: ["Alex", "Maya", "Jordan"],
+      relatedProject: "Website Redesign",
+      relatedTeam: "Design",
+      reason: "Design approval is delaying engineering",
+      duration: "20 min",
+      status: "Suggested",
+      agenda: ["Review missing mobile proof", "Confirm approval owner", "Set engineering handoff time"],
+      notes: ["Pulse recommends resolving design approval today."],
+      decisions: ["Engineering starts after mobile proof is attached."],
+      actionItemIds: [],
+    },
+    {
+      id: "call-finance-numbers",
+      title: "Finance Numbers Check-in",
+      participants: ["Sam", "Priya"],
+      relatedProject: "Investor Update Deck",
+      relatedTeam: "Finance",
+      reason: "Investor Update Deck is blocked by missing finance numbers",
+      duration: "15 min",
+      status: "Scheduled",
+      agenda: ["Confirm revenue numbers", "Confirm burn rate", "Set final deck deadline"],
+      notes: ["Finance numbers are the critical dependency."],
+      decisions: [],
+      actionItemIds: [],
+    },
+    {
+      id: "call-product-support",
+      title: "Product Support Huddle",
+      participants: ["Maya", "Jordan", "Elena"],
+      relatedProject: "Q3 Launch Review",
+      relatedTeam: "Product",
+      reason: "Product team is near capacity and Engineering can absorb one task",
+      duration: "10 min",
+      status: "Suggested",
+      agenda: ["Identify task to reassign", "Confirm Jordan capacity", "Publish support plan"],
+      notes: ["Use this huddle to reduce Maya's workload without slowing launch work."],
+      decisions: [],
+      actionItemIds: [],
+    },
+  ];
+}
+
 const defaultSettings: SettingsState = {
   theme: "Midnight Pulse",
   density: "Comfortable",
@@ -287,6 +359,7 @@ function initialData() {
     inboxItems: buildInboxItems(),
     notifications: clone(seedNotifications),
     chatRooms: buildInitialChatRooms(),
+    calls: buildInitialCalls(),
     meetings: clone(seedMeetings),
     decisions: clone(seedDecisions),
     playbooks: clone(seedPlaybooks),
@@ -330,6 +403,23 @@ export const usePulseStore = create<PulseState>()(
         return message;
       },
       markRoomRead: (roomId) => set((state) => ({ chatRooms: state.chatRooms.map((room) => room.id === roomId ? { ...room, isRead: true, unreadCount: 0 } : room) })),
+      startHuddleFromRoom: (roomId) => {
+        const room = get().chatRooms.find((item) => item.id === roomId);
+        if (!room) return null;
+        const callId = get().createCall({
+          title: `${room.name} Huddle`,
+          participants: ["Mithilessh", "Maya", "Jordan"],
+          relatedProject: room.linkedProject,
+          relatedTeam: room.linkedTeam,
+          reason: `Started from ${room.name} to resolve current room context.`,
+          duration: "15 min",
+          status: "In progress",
+          startedAt: nowLabel(),
+          agenda: ["Review room summary", "Confirm next owner", "Create follow-up tasks"],
+          notes: [room.aiSummary ?? room.description],
+        });
+        return callId;
+      },
       summarizeChatRoom: (roomId) => {
         const room = get().chatRooms.find((item) => item.id === roomId);
         const summary = `Summary for ${room?.name ?? "room"}: ${(room?.messages ?? []).slice(-3).map((message) => message.body).join(" ")} Key dependencies remain visible for manager review.`;
@@ -506,6 +596,37 @@ export const usePulseStore = create<PulseState>()(
       skipAutopilotAction: (actionId) => get().editAutopilotAction(actionId, { status: "Skipped" }),
       editAutopilotAction: (actionId, updates) => set((state) => ({ autopilotPlans: state.autopilotPlans.map((plan) => ({ ...plan, actions: plan.actions.map((action) => action.id === actionId ? { ...action, ...updates } : action) })) })),
       runSelectedAutopilotActions: (actionIds) => set((state) => ({ autopilotPlans: state.autopilotPlans.map((plan) => ({ ...plan, actions: plan.actions.map((action) => actionIds.includes(action.id) ? { ...action, status: "Completed" } : action) })) })),
+      createCall: (data = {}) => {
+        const callId = data.id ?? id("call");
+        const call: CallRecord = {
+          id: callId,
+          title: data.title ?? "Workspace Huddle",
+          participants: data.participants ?? ["Mithilessh", "Maya"],
+          relatedProject: data.relatedProject,
+          relatedTeam: data.relatedTeam,
+          reason: data.reason ?? "Quick work-tied alignment.",
+          duration: data.duration ?? "15 min",
+          status: data.status ?? "Suggested",
+          agenda: data.agenda ?? ["Review context", "Capture decisions", "Create follow-up actions"],
+          notes: data.notes ?? [],
+          decisions: data.decisions ?? [],
+          actionItemIds: data.actionItemIds ?? [],
+          startedAt: data.startedAt,
+          endedAt: data.endedAt,
+        };
+        set((state) => ({ calls: [call, ...state.calls], activityFeed: [`Call created: ${call.title}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Call created: ${callId}`, ...state.auditTrail] }));
+        return callId;
+      },
+      startCall: (callId) => set((state) => ({ calls: state.calls.map((call) => call.id === callId ? { ...call, status: "In progress", startedAt: call.startedAt ?? nowLabel() } : call), auditTrail: [`${nowLabel()} · Call started: ${callId}`, ...state.auditTrail] })),
+      endCall: (callId) => set((state) => ({ calls: state.calls.map((call) => call.id === callId ? { ...call, status: "Completed", endedAt: nowLabel(), notes: call.notes.length ? call.notes : ["Call completed. Notes are ready for review."] } : call), activityFeed: [`Call completed: ${state.calls.find((call) => call.id === callId)?.title ?? callId}`, ...state.activityFeed] })),
+      generateCallAgenda: (callId) => set((state) => ({ calls: state.calls.map((call) => call.id === callId ? { ...call, agenda: ["Confirm current blocker", "Assign decision owner", "Create follow-up tasks", "Publish summary"] } : call), auditTrail: [`${nowLabel()} · Call agenda generated: ${callId}`, ...state.auditTrail] })),
+      createCallFollowUpTasks: (callId) => {
+        const call = get().calls.find((item) => item.id === callId);
+        if (!call) return;
+        const taskId = get().createTask({ title: `Follow up from ${call.title}`, project: call.relatedProject ?? "Q3 Launch Review", owner: call.participants[0] ?? "Mithilessh", status: "In Progress", priority: "Medium" });
+        set((state) => ({ calls: state.calls.map((item) => item.id === callId ? { ...item, actionItemIds: [...item.actionItemIds, taskId] } : item) }));
+      },
+      updateCallNotes: (callId, notes) => set((state) => ({ calls: state.calls.map((call) => call.id === callId ? { ...call, notes } : call) })),
       generateMeetingAgenda: (meetingId) => set((state) => ({ meetings: state.meetings.map((meeting) => meeting.id === meetingId ? { ...meeting, generatedAgenda: [...meeting.agenda, "Confirm owners", "Publish follow-ups"] } : meeting) })),
       createMeetingFollowUpTasks: (meetingId) => {
         const meeting = get().meetings.find((item) => item.id === meetingId);

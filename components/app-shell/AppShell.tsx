@@ -19,6 +19,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  PhoneCall,
   Moon,
   Plus,
   ReceiptText,
@@ -62,6 +63,7 @@ const navGroups = [
       { label: "Teams", href: "/app/teams", Icon: BriefcaseBusiness },
       { label: "People", href: "/app/team", Icon: Users },
       { label: "Chat", href: "/app/chat", Icon: MessageSquare },
+      { label: "Calls", href: "/app/calls", Icon: PhoneCall },
       { label: "Meetings", href: "/app/meetings", Icon: CalendarDays },
     ],
   },
@@ -84,6 +86,7 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/app/autopilot": { title: "Pulse Autopilot", subtitle: "Turn messy manager instructions into organized actions" },
   "/app/inbox": { title: "Manager Inbox", subtitle: "Everything needing review in one calm queue" },
   "/app/chat": { title: "Work Rooms", subtitle: "Team chat connected to projects, approvals, and decisions" },
+  "/app/calls": { title: "Calls", subtitle: "Work-tied huddles, agendas, notes, and follow-up actions" },
   "/app/meetings": { title: "Meeting Hub", subtitle: "Fewer, better meetings with clear agendas and follow-ups" },
   "/app/teams": { title: "Teams", subtitle: "Team health, ownership, workload, and focus areas" },
   "/app/team": { title: "People", subtitle: "Support needs, capacity, availability, and delivery confidence" },
@@ -102,10 +105,10 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
 };
 
 const themes = [
-  { id: "midnight", name: "Midnight Pulse", bg: "#07090F", panel: "#0A0F1C", text: "#F0F2F8", accent: "#6D5DFB" },
-  { id: "graphite", name: "Graphite", bg: "#080808", panel: "#111111", text: "#F5F5F5", accent: "#60A5FA" },
-  { id: "aurora", name: "Aurora", bg: "#061211", panel: "#0B1B20", text: "#EFFDFB", accent: "#14B8A6" },
-  { id: "light", name: "Light Executive", bg: "#F6F8FB", panel: "#FFFFFF", text: "#111827", accent: "#4F46E5" },
+  { id: "midnight", name: "Midnight Pulse", bg: "#07090F", sidebar: "rgba(7,9,15,0.92)", panel: "#0A0F1C", card: "rgba(17,24,39,0.86)", cardSoft: "rgba(255,255,255,0.035)", text: "#F0F2F8", secondary: "#C8D0E8", muted: "#6B7A9F", border: "rgba(255,255,255,0.08)", borderStrong: "rgba(255,255,255,0.14)", accent: "#6D5DFB", accent2: "#00B4D8", success: "#4ADE80", warning: "#FBBF24", risk: "#F87171" },
+  { id: "graphite", name: "Graphite", bg: "#080808", sidebar: "rgba(8,8,8,0.94)", panel: "#111111", card: "rgba(24,24,27,0.88)", cardSoft: "rgba(255,255,255,0.045)", text: "#F5F5F5", secondary: "#D4D4D8", muted: "#A1A1AA", border: "rgba(255,255,255,0.10)", borderStrong: "rgba(255,255,255,0.18)", accent: "#60A5FA", accent2: "#A78BFA", success: "#34D399", warning: "#FBBF24", risk: "#FB7185" },
+  { id: "aurora", name: "Aurora", bg: "#061211", sidebar: "rgba(6,18,17,0.94)", panel: "#0B1B20", card: "rgba(11,27,32,0.88)", cardSoft: "rgba(20,184,166,0.075)", text: "#EFFDFB", secondary: "#C9F4EE", muted: "#7BA8A3", border: "rgba(148,255,235,0.12)", borderStrong: "rgba(148,255,235,0.22)", accent: "#14B8A6", accent2: "#8B5CF6", success: "#5EEAD4", warning: "#FACC15", risk: "#FB7185" },
+  { id: "light", name: "Light Executive", bg: "#F6F8FB", sidebar: "rgba(255,255,255,0.94)", panel: "#FFFFFF", card: "rgba(255,255,255,0.94)", cardSoft: "rgba(79,70,229,0.055)", text: "#111827", secondary: "#334155", muted: "#64748B", border: "rgba(15,23,42,0.12)", borderStrong: "rgba(15,23,42,0.20)", accent: "#4F46E5", accent2: "#0891B2", success: "#059669", warning: "#B45309", risk: "#DC2626" },
 ];
 
 type ModalKind = "Create Project" | "Create Task" | "Invite Member" | "Create Team" | "Submit Expense" | "Generate Report";
@@ -224,7 +227,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <PulseLogo />
         <div>
           <p className="text-[15px] font-semibold tracking-[-0.02em] text-[var(--pulse-text)]">Pulse</p>
-          <p className="text-xs text-[#6B7A9F]">Enterprise operating system</p>
+          <p className="text-xs text-[var(--text-muted)]">Enterprise operating system</p>
         </div>
       </a>
     </div>
@@ -235,7 +238,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="space-y-5">
         {navGroups.map((group) => (
           <div key={group.label} className="space-y-2">
-            <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4D5E78]">{group.label}</p>
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">{group.label}</p>
             <div className="space-y-1">
               {group.items.map(({ label, href, Icon }) => {
                 const active = pathname === href;
@@ -246,7 +249,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     onClick={() => setMobileOpen(false)}
                     whileHover={{ x: 3 }}
                     className={`flex h-9 w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/50 ${
-                      active ? "border border-[var(--pulse-accent)]/30 bg-white/[0.075] text-[var(--pulse-text)]" : "text-[#7F8BA6] hover:bg-white/[0.04] hover:text-[var(--pulse-text)]"
+                      active ? "border border-[var(--pulse-accent)]/30 bg-white/[0.075] text-[var(--pulse-text)]" : "text-[var(--text-muted)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]"
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -262,18 +265,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   const SidebarFooter = (
-    <div className="shrink-0 border-t border-white/[0.06] p-4">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#4D5E78]">Workspace</p>
+    <div className="shrink-0 border-t border-[var(--border-subtle)] p-4">
+      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--text-muted)]">Workspace</p>
         <p className="mt-2 text-sm font-semibold text-[var(--pulse-text)]">{enterprise.name}</p>
-        <div className="mt-4 flex items-center gap-3 border-t border-white/10 pt-4">
+        <div className="mt-4 flex items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-semibold text-white">M</div>
           <div>
             <p className="text-sm font-medium text-[var(--pulse-text)]">{enterprise.owner}</p>
-            <p className="text-xs text-[#6B7A9F]">Owner</p>
+            <p className="text-xs text-[var(--text-muted)]">Owner</p>
           </div>
         </div>
-        <button onClick={logout} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-[#9BA8C7] transition hover:text-[var(--pulse-text)] focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/50">
+        <button onClick={logout} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs font-medium text-[var(--text-muted)] transition hover:text-[var(--pulse-text)] focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/50">
           <LogOut className="h-3.5 w-3.5" />
           Log out
         </button>
@@ -286,16 +289,30 @@ export function AppShell({ children }: { children: ReactNode }) {
       className="relative min-h-screen overflow-hidden text-[var(--pulse-text)] transition-colors duration-300"
       style={{
         "--pulse-bg": theme.bg,
+        "--app-bg": theme.bg,
+        "--sidebar-bg": theme.sidebar,
         "--pulse-panel": theme.panel,
+        "--card-bg": theme.cardSoft,
+        "--card-raised-bg": theme.card,
         "--pulse-text": theme.text,
+        "--text-primary": theme.text,
+        "--text-secondary": theme.secondary,
+        "--text-muted": theme.muted,
+        "--border-subtle": theme.border,
+        "--border-strong": theme.borderStrong,
         "--pulse-accent": theme.accent,
+        "--accent": theme.accent,
+        "--accent-2": theme.accent2,
+        "--success": theme.success,
+        "--warning": theme.warning,
+        "--risk": theme.risk,
         background: theme.bg,
       } as CSSProperties}
     >
       <div className="absolute inset-0 grid-bg opacity-20" />
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 52% 34% at 12% 8%, ${theme.accent}24, transparent 70%), radial-gradient(ellipse 42% 30% at 88% 16%, rgba(0,180,216,0.08), transparent 70%)` }} />
       <div className="relative z-10 flex">
-        <aside className="hidden h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-[var(--pulse-bg)]/90 backdrop-blur-xl lg:sticky lg:top-0 lg:flex">
+        <aside className="hidden h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl lg:sticky lg:top-0 lg:flex">
           {SidebarHeader}
           {SidebarNav}
           {SidebarFooter}
@@ -303,8 +320,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         {mobileOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <button aria-label="Close sidebar overlay" className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} className="relative flex h-full w-[300px] flex-col overflow-hidden border-r border-white/10 bg-[var(--pulse-bg)]/96 backdrop-blur-xl">
-              <button aria-label="Close sidebar" onClick={() => setMobileOpen(false)} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-[#9BA8C7]">
+            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} className="relative flex h-full w-[300px] flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl">
+              <button aria-label="Close sidebar" onClick={() => setMobileOpen(false)} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)]">
                 <X className="h-4 w-4" />
               </button>
               {SidebarHeader}
@@ -314,31 +331,31 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[var(--pulse-bg)]/82 px-4 py-4 backdrop-blur-xl md:px-6">
+          <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--app-bg)]/82 px-4 py-4 backdrop-blur-xl md:px-6">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <p className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: theme.accent }}>
-                  <button aria-label="Open sidebar" onClick={() => setMobileOpen(true)} className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#9BA8C7] lg:hidden">
+                  <button aria-label="Open sidebar" onClick={() => setMobileOpen(true)} className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] lg:hidden">
                     <Menu className="h-4 w-4" />
                   </button>
                   <Command className="h-3.5 w-3.5" />
                   Pulse
-                  <span className="rounded-md border border-white/10 px-2 py-0.5 text-[10px] text-[#7F8BA6]">Cmd K</span>
+                  <span className="rounded-md border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">Cmd K</span>
                 </p>
                 <h1 className="text-2xl font-bold tracking-[-0.02em] md:text-3xl">{meta.title}</h1>
-                <p className="mt-1 text-sm text-[#6B7A9F]">{meta.subtitle}</p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">{meta.subtitle}</p>
               </div>
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <form onSubmit={submitCommand} className="relative block md:w-[360px]">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4D5E78]" />
-                  <input value={command} onChange={(event) => setCommand(event.target.value)} placeholder="Ask Pulse or search workspace..." className="h-10 w-full rounded-lg border border-white/10 bg-white/[0.04] pl-9 pr-3 text-sm outline-none transition placeholder:text-[#4D5E78] focus:border-[var(--pulse-accent)]/70 focus:bg-white/[0.065]" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
+                  <input value={command} onChange={(event) => setCommand(event.target.value)} placeholder="Ask Pulse or search workspace..." className="h-10 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/70 focus:bg-[var(--card-raised-bg)]" />
                 </form>
                 <div className="relative flex items-center gap-2">
-                  <button aria-label="Open notifications" onClick={() => setNotificationOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[#9BA8C7] transition hover:text-[var(--pulse-text)]">
+                  <button aria-label="Open notifications" onClick={() => setNotificationOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)] transition hover:text-[var(--pulse-text)]">
                     <Bell className="h-4 w-4" />
                     {notifications.some((n) => n.unread) ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#00B4D8]" /> : null}
                   </button>
-                  <button aria-label="Cycle theme" onClick={cycleTheme} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[#9BA8C7] transition hover:text-[var(--pulse-text)]">
+                  <button aria-label="Cycle theme" onClick={cycleTheme} className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)] transition hover:text-[var(--pulse-text)]">
                     {themeId === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </button>
                   <div className="relative">
@@ -348,9 +365,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </button>
                     <AnimatePresence>
                       {createOpen ? (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-white/10 bg-[var(--pulse-panel)] p-2 shadow-2xl">
+                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-2 shadow-2xl">
                           {(["Create Project", "Create Task", "Invite Member", "Create Team", "Submit Expense", "Generate Report"] as ModalKind[]).map((item) => (
-                            <button key={item} onClick={() => openCreate(item)} className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#C8D0E8] hover:bg-white/[0.06] hover:text-[var(--pulse-text)]">{item}</button>
+                            <button key={item} onClick={() => openCreate(item)} className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]">{item}</button>
                           ))}
                         </motion.div>
                       ) : null}
@@ -361,25 +378,25 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
           </header>
-          <div className="p-4 md:p-6">{children}</div>
+          <div className="p-4 pb-24 md:p-6 md:pb-28">{children}</div>
         </div>
       </div>
 
       <AnimatePresence>
         {paletteOpen ? (
           <motion.div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/55 px-4 pt-[12vh] backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 12 }} className="w-full max-w-2xl rounded-[24px] border border-white/10 bg-[var(--pulse-panel)]/96 p-3 shadow-2xl">
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 12 }} className="w-full max-w-2xl rounded-[24px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-3 shadow-2xl">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7A9F]" />
-                <input autoFocus value={paletteQuery} onChange={(event) => setPaletteQuery(event.target.value)} placeholder="Search pages, create actions, ask Pulse..." className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] pl-11 pr-4 text-sm outline-none focus:border-[var(--pulse-accent)]/60" />
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
+                <input autoFocus value={paletteQuery} onChange={(event) => setPaletteQuery(event.target.value)} placeholder="Search pages, create actions, ask Pulse..." className="h-12 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-11 pr-4 text-sm outline-none focus:border-[var(--pulse-accent)]/60" />
               </div>
               <div className="mt-3 max-h-[420px] overflow-y-auto">
                 {filteredPalette.length ? filteredPalette.map(({ label, action, Icon }) => (
-                  <button key={label} onClick={() => { action(); setPaletteOpen(false); }} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[#C8D0E8] hover:bg-white/[0.06] hover:text-[var(--pulse-text)]">
+                  <button key={label} onClick={() => { action(); setPaletteOpen(false); }} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]">
                     <Icon className="h-4 w-4" />
                     {label}
                   </button>
-                )) : <div className="p-6 text-center text-sm text-[#6B7A9F]">No matching command.</div>}
+                )) : <div className="p-6 text-center text-sm text-[var(--text-muted)]">No matching command.</div>}
               </div>
             </motion.div>
           </motion.div>
@@ -388,23 +405,23 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <AnimatePresence>
         {notificationOpen ? (
-          <motion.aside initial={{ x: 420 }} animate={{ x: 0 }} exit={{ x: 420 }} className="fixed right-0 top-0 z-[70] h-full w-full max-w-[400px] border-l border-white/10 bg-[var(--pulse-panel)]/96 p-5 shadow-2xl backdrop-blur-xl">
+          <motion.aside initial={{ x: 420 }} animate={{ x: 0 }} exit={{ x: 420 }} className="fixed right-0 top-0 z-[70] h-full w-full max-w-[400px] border-l border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-5 shadow-2xl backdrop-blur-xl">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Notifications</h2>
-                <p className="text-sm text-[#6B7A9F]">Signals that need manager attention.</p>
+                <p className="text-sm text-[var(--text-muted)]">Signals that need manager attention.</p>
               </div>
-              <button aria-label="Close notifications" onClick={() => setNotificationOpen(false)} className="rounded-lg border border-white/10 p-2 text-[#9BA8C7]"><X className="h-4 w-4" /></button>
+              <button aria-label="Close notifications" onClick={() => setNotificationOpen(false)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button>
             </div>
-            <button onClick={markAllNotificationsRead} className="mb-3 rounded-lg border border-white/10 px-3 py-2 text-xs text-[#C8D0E8]">Mark all read</button>
+            <button onClick={markAllNotificationsRead} className="mb-3 rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Mark all read</button>
             <div className="space-y-2">
               {notifications.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                <div key={item.id} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 text-xs leading-5 text-[#7F8BA6]">{item.description}</p></div>
+                    <div><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{item.description}</p></div>
                     {item.unread ? <span className="mt-1 h-2 w-2 rounded-full bg-[#00B4D8]" /> : null}
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-[#6B7A9F]"><span>{item.time}</span><button onClick={() => markNotificationRead(item.id)} className="text-[#C8D0E8]">{item.action}</button></div>
+                  <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-muted)]"><span>{item.time}</span><button onClick={() => markNotificationRead(item.id)} className="text-[var(--text-secondary)]">{item.action}</button></div>
                 </div>
               ))}
             </div>
@@ -415,14 +432,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AnimatePresence>
         {modalKind ? (
           <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} className="w-full max-w-lg rounded-[24px] border border-white/10 bg-[var(--pulse-panel)] p-5 shadow-2xl">
+            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} className="w-full max-w-lg rounded-[24px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-5 shadow-2xl">
               <div className="mb-4 flex items-start justify-between gap-4">
-                <div><h2 className="text-lg font-semibold">{modalKind}</h2><p className="mt-1 text-sm text-[#7F8BA6]">Create a workspace draft and review it before sharing with the team.</p></div>
-                <button aria-label="Close modal" onClick={() => setModalKind(null)} className="rounded-lg border border-white/10 p-2 text-[#9BA8C7]"><X className="h-4 w-4" /></button>
+                <div><h2 className="text-lg font-semibold">{modalKind}</h2><p className="mt-1 text-sm text-[var(--text-muted)]">Create a workspace draft and review it before sharing with the team.</p></div>
+                <button aria-label="Close modal" onClick={() => setModalKind(null)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button>
               </div>
               <div className="space-y-3">
-                <label className="block text-sm text-[#C8D0E8]">Name<input className="mt-2 h-10 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 outline-none focus:border-[var(--pulse-accent)]/60" placeholder={`${modalKind} name`} /></label>
-                <label className="block text-sm text-[#C8D0E8]">Notes<textarea className="mt-2 min-h-[92px] w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 outline-none focus:border-[var(--pulse-accent)]/60" placeholder="Add context..." /></label>
+                <label className="block text-sm text-[var(--text-secondary)]">Name<input className="mt-2 h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 outline-none focus:border-[var(--pulse-accent)]/60" placeholder={`${modalKind} name`} /></label>
+                <label className="block text-sm text-[var(--text-secondary)]">Notes<textarea className="mt-2 min-h-[92px] w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 outline-none focus:border-[var(--pulse-accent)]/60" placeholder="Add context..." /></label>
                 <button onClick={saveCreateDraft} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--pulse-accent)] px-4 py-3 text-sm font-semibold text-white"><CheckCircle2 className="h-4 w-4" />Save draft</button>
               </div>
             </motion.div>
@@ -433,11 +450,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="fixed bottom-5 right-5 z-40">
         <AnimatePresence>
           {floatingOpen ? (
-            <motion.div initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} className="mb-3 w-[min(360px,calc(100vw-40px))] rounded-[22px] border border-white/10 bg-[var(--pulse-panel)]/96 p-4 shadow-2xl backdrop-blur-xl">
-              <div className="mb-3 flex items-center justify-between"><p className="text-sm font-semibold">Ask Pulse</p><button onClick={() => setFloatingOpen(false)} className="text-[#9BA8C7]"><X className="h-4 w-4" /></button></div>
-              <div className="flex flex-wrap gap-2">{["What needs attention?", "Who needs support?", "What is blocked?", "Write update"].map((chip) => <button key={chip} onClick={() => askMini(chip)} className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-[#9BA8C7] hover:text-[var(--pulse-text)]">{chip}</button>)}</div>
-              <form onSubmit={(event) => { event.preventDefault(); askMini(); }} className="mt-3 flex gap-2"><input value={miniPrompt} onChange={(event) => setMiniPrompt(event.target.value)} placeholder="Ask Pulse..." className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm outline-none" /><button type="submit" className="rounded-xl bg-[var(--pulse-accent)] px-3 text-sm font-semibold text-white">Ask</button></form>
-              <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.035] p-3 text-xs leading-5 text-[#C8D0E8]">{miniAnswer}</p>
+            <motion.div initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} className="mb-3 w-[min(360px,calc(100vw-40px))] rounded-[22px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-4 shadow-2xl backdrop-blur-xl">
+              <div className="mb-3 flex items-center justify-between"><p className="text-sm font-semibold">Ask Pulse</p><button onClick={() => setFloatingOpen(false)} className="text-[var(--text-muted)]"><X className="h-4 w-4" /></button></div>
+              <div className="flex flex-wrap gap-2">{["What needs attention?", "Who needs support?", "What is blocked?", "Write update"].map((chip) => <button key={chip} onClick={() => askMini(chip)} className="rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--pulse-text)]">{chip}</button>)}</div>
+              <form onSubmit={(event) => { event.preventDefault(); askMini(); }} className="mt-3 flex gap-2"><input value={miniPrompt} onChange={(event) => setMiniPrompt(event.target.value)} placeholder="Ask Pulse..." className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm outline-none" /><button type="submit" className="rounded-xl bg-[var(--pulse-accent)] px-3 text-sm font-semibold text-white">Ask</button></form>
+              <p className="mt-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-xs leading-5 text-[var(--text-secondary)]">{miniAnswer}</p>
             </motion.div>
           ) : null}
         </AnimatePresence>

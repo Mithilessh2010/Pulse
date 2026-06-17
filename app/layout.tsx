@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   title: "Pulse — AI Team Operating System",
   description:
     "Projects, approvals, expenses, workload, and team insights — unified in one command center for fast-moving teams.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

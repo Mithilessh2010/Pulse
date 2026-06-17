@@ -561,15 +561,15 @@ export const askPulseResponses: Record<string, string> = {
 
 export type Integration = {
   name: string;
-  status: "Available soon" | "Not connected" | "Planned";
+  status: "Ready to connect" | "Not connected" | "Planned";
   description: string;
 };
 
 export const integrations: Integration[] = [
-  { name: "Google Calendar", status: "Available soon", description: "Meetings, agendas, and follow-up ownership." },
+  { name: "Google Calendar", status: "Ready to connect", description: "Meetings, agendas, and follow-up ownership." },
   { name: "GitHub", status: "Not connected", description: "Pull requests, code activity, and engineering proof." },
   { name: "Slack", status: "Not connected", description: "Approvals, updates, and blocker alerts." },
-  { name: "Microsoft Teams", status: "Available soon", description: "Team conversations, meetings, and workspace context." },
+  { name: "Microsoft Teams", status: "Ready to connect", description: "Team conversations, meetings, and workspace context." },
   { name: "Notion", status: "Not connected", description: "Docs, specs, and decision records." },
   { name: "Jira", status: "Not connected", description: "Issues, sprints, and delivery state." },
   { name: "Asana", status: "Planned", description: "Tasks and project timelines." },

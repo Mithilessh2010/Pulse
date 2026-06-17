@@ -3,6 +3,20 @@
 @tailwind utilities;
 
 :root {
+  --app-bg: #07090F;
+  --sidebar-bg: rgba(7, 9, 15, 0.9);
+  --card-bg: rgba(12, 18, 32, 0.75);
+  --card-raised-bg: rgba(17, 24, 39, 0.85);
+  --text-primary: #F0F2F8;
+  --text-secondary: #C8D0E8;
+  --text-muted: #6B7A9F;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --accent: #6d5dfb;
+  --accent-2: #00b4d8;
+  --success: #4ADE80;
+  --warning: #FBBF24;
+  --risk: #F87171;
   --bg: #07090F;
   --card: #0C1220;
   --card-raised: #111827;
@@ -60,15 +74,15 @@ samp {
 }
 
 .glass {
-  background: rgba(12, 18, 32, 0.75);
-  border: 1px solid var(--glass-border);
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 .glass-raised {
-  background: rgba(17, 24, 39, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-raised-bg);
+  border: 1px solid var(--border-subtle);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }

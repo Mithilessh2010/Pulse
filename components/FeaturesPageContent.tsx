@@ -489,7 +489,7 @@ export default function FeaturesPageContent() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[#F0F2F8]">{integration}</p>
-                <p className="mt-1 text-xs text-[#6B7A9F]">Coming soon</p>
+                <p className="mt-1 text-xs text-[#6B7A9F]">Roadmap integration</p>
               </div>
             </motion.div>
           ))}

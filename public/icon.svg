@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="18" fill="#07090F"/>
+  <rect x="6" y="6" width="52" height="52" rx="15" fill="#0C1220" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+  <path d="M22 20H34.5C42.232 20 48.5 26.268 48.5 34C48.5 41.732 42.232 48 34.5 48H22" stroke="url(#pulse-a)" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M22 30H34.5C36.709 30 38.5 31.791 38.5 34C38.5 36.209 36.709 38 34.5 38H22" stroke="#28C6F6" stroke-width="5.5" stroke-linecap="round"/>
+  <circle cx="21" cy="20" r="2.8" fill="#28C6F6"/>
+  <circle cx="21" cy="30" r="2.8" fill="#28C6F6"/>
+  <circle cx="21" cy="38" r="2.8" fill="#6D5DFB"/>
+  <defs>
+    <linearGradient id="pulse-a" x1="22" y1="20" x2="51" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#28C6F6"/>
+      <stop offset="1" stop-color="#6D5DFB"/>
+    </linearGradient>
+  </defs>
+</svg>

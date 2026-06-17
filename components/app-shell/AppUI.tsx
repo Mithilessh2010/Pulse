@@ -10,8 +10,8 @@ export const containerVariants = {
 };
 
 export const cardVariants = {
-  hidden: { opacity: 0, y: 18, filter: "blur(8px)" },
-  visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.5, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.42, ease: "easeOut" } },
 };
 
 export function DashboardCard({
@@ -29,11 +29,11 @@ export function DashboardCard({
     <motion.section
       variants={cardVariants}
       whileHover={{ y: -3, borderColor: "rgba(255,255,255,0.13)" }}
-      className={`glass-raised rounded-2xl p-4 shadow-[0_18px_50px_rgba(0,0,0,0.26)] ${className}`}
+      className={`glass-raised rounded-2xl p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)] ${className}`}
     >
       <div className="mb-4">
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[#F0F2F8]">{title}</h2>
-        {subtitle ? <p className="mt-1 text-xs leading-5 text-[#6B7A9F]">{subtitle}</p> : null}
+        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">{title}</h2>
+        {subtitle ? <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{subtitle}</p> : null}
       </div>
       {children}
     </motion.section>
@@ -46,7 +46,7 @@ export function StatusBadge({ label }: { label: string }) {
   const color = risk ? "#F87171" : review ? "#FBBF24" : label.includes("Available") || label.includes("Approved") || label.includes("Completed") || label.includes("Low") ? "#00B4D8" : "#4ADE80";
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.035] px-2 py-1 text-[11px] font-medium text-[#C8D0E8]">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
       <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} animate={{ opacity: [0.45, 1, 0.45] }} transition={{ duration: 1.8, repeat: Infinity }} />
       {label}
     </span>
@@ -59,7 +59,7 @@ export function RiskBadge({ label }: { label: string }) {
 
 export function ProgressBar({ value, color = "#6D5DFB" }: { value: number; color?: string }) {
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+    <div className="h-1.5 overflow-hidden rounded-full bg-[var(--card-bg)]">
       <motion.div className="h-full rounded-full" style={{ background: color }} initial={{ width: 0 }} animate={{ width: `${value}%` }} transition={{ duration: 0.9, ease: "easeOut" }} />
     </div>
   );
@@ -67,16 +67,16 @@ export function ProgressBar({ value, color = "#6D5DFB" }: { value: number; color
 
 export function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
-      <p className="text-xl font-semibold text-[#F0F2F8]">{value}</p>
-      <p className="mt-1 text-xs text-[#6B7A9F]">{label}</p>
+    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
+      <p className="text-xl font-semibold text-[var(--text-primary)]">{value}</p>
+      <p className="mt-1 text-xs text-[var(--text-muted)]">{label}</p>
     </div>
   );
 }
 
 export function LoadingSpinner({ label = "Loading" }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-2 text-xs font-medium text-[#9BA8C7]">
+    <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--text-muted)]">
       <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00B4D8]" />
       {label}
     </span>
@@ -86,8 +86,8 @@ export function LoadingSpinner({ label = "Loading" }: { label?: string }) {
 export function TooltipInfo({ text }: { text: string }) {
   return (
     <span className="group relative inline-flex">
-      <Info className="h-4 w-4 text-[#6B7A9F]" />
-      <span className="pointer-events-none absolute left-1/2 top-6 z-20 w-64 -translate-x-1/2 rounded-xl border border-white/10 bg-[#0A0F1C] p-3 text-xs leading-5 text-[#C8D0E8] opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
+      <Info className="h-4 w-4 text-[var(--text-muted)]" />
+      <span className="pointer-events-none absolute left-1/2 top-6 z-20 w-64 -translate-x-1/2 rounded-xl border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-3 text-xs leading-5 text-[var(--text-secondary)] opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
         {text}
       </span>
     </span>
@@ -98,8 +98,8 @@ export function PageHeader({ title, description, action }: { title: string; desc
   return (
     <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div>
-        <h2 className="text-2xl font-bold tracking-[-0.02em] text-[#F0F2F8]">{title}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6B7A9F]">{description}</p>
+        <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--text-primary)]">{title}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">{description}</p>
       </div>
       {action}
     </div>
@@ -108,10 +108,10 @@ export function PageHeader({ title, description, action }: { title: string; desc
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.025] p-6 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--card-bg)] p-6 text-center">
       <FileText className="mx-auto h-6 w-6 text-[#8B7FFF]" />
-      <p className="mt-3 text-sm font-semibold text-[#F0F2F8]">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-[#6B7A9F]">{description}</p>
+      <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{description}</p>
     </div>
   );
 }
@@ -157,7 +157,7 @@ export function AskPulseCard({ answer = askFallback }: { answer?: string }) {
             className={`rounded-full border px-3 py-1.5 text-xs transition ${
               activePrompt === chip
                 ? "border-[#6D5DFB]/50 bg-[#6D5DFB]/15 text-white"
-                : "border-white/10 bg-white/[0.035] text-[#9BA8C7] hover:border-white/20 hover:text-white"
+                : "border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
             }`}
           >
             {chip}
@@ -174,9 +174,9 @@ export function AskPulseCard({ answer = askFallback }: { answer?: string }) {
         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#00B4D8]">
           <Sparkles className="h-3.5 w-3.5" />
           {isLoading ? "Thinking" : "Pulse answer"}
-          {!isLoading ? <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-[#9BA8C7]">{source === "openrouter" ? "Live AI" : source === "error" ? "Workspace answer" : "Workspace answer"}</span> : null}
+          {!isLoading ? <span className="ml-auto rounded-full border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">{source === "openrouter" ? "Live AI" : source === "error" ? "Workspace answer" : "Workspace answer"}</span> : null}
         </div>
-        {isLoading ? <LoadingSpinner label="Reading project, approval, workload, and expense context..." /> : <p className="text-sm leading-6 text-[#D7E1F7]">{response}</p>}
+        {isLoading ? <LoadingSpinner label="Reading project, approval, workload, and expense context..." /> : <p className="text-sm leading-6 text-[var(--text-secondary)]">{response}</p>}
       </motion.div>
     </DashboardCard>
   );
@@ -189,9 +189,9 @@ export function ActivityFeed({ items }: { items: string[] }) {
         {items.map((item, index) => (
           <div key={item} className="flex gap-3">
             <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/[0.055] text-[11px] font-semibold text-[#8B7FFF]">{index + 1}</div>
-            <div className="border-b border-white/[0.06] pb-3 last:border-0 last:pb-0">
-              <p className="text-sm leading-5 text-[#C8D0E8]">{item}</p>
-              <p className="mt-1 text-xs text-[#4D5E78]">{index + 8} min ago</p>
+            <div className="border-b border-[var(--border-subtle)] pb-3 last:border-0 last:pb-0">
+              <p className="text-sm leading-5 text-[var(--text-secondary)]">{item}</p>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">{index + 8} min ago</p>
             </div>
           </div>
         ))}
