@@ -1,3 +1,10 @@
 {
-  "/page": "app/page.js"
+  "/signin/page": "app/signin/page.js",
+  "/page": "app/page.js",
+  "/api/ask-pulse/route": "app/api/ask-pulse/route.js",
+  "/app/page": "app/app/page.js",
+  "/app/tasks/page": "app/app/tasks/page.js",
+  "/app/team/page": "app/app/team/page.js",
+  "/app/ask/page": "app/app/ask/page.js",
+  "/app/reports/page": "app/app/reports/page.js"
 }

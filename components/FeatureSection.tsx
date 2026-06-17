@@ -52,7 +52,7 @@ export default function FeatureSection() {
           transition={{ duration: 0.5 }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: "#4D5E78" }}>
-            What's inside
+            What&apos;s inside
           </p>
           <h2 className="text-3xl md:text-4xl font-display font-semibold tracking-[-0.04em] leading-[1.02]" style={{ color: "#F0F2F8" }}>
             One place for everything

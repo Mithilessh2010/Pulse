@@ -44,7 +44,7 @@ export default function CTASection() {
           {/* Buttons */}
           <div className="flex flex-wrap gap-3 justify-center">
             <motion.a
-              href="#"
+              href="/signup"
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-semibold text-white"
               style={{
                 background: "linear-gradient(135deg, #00D4FF 0%, #6D5DFB 100%)",

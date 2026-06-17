@@ -324,7 +324,7 @@ export default function HeroPulse() {
           {/* CTAs */}
           <motion.div variants={itemVariants} className="flex flex-wrap gap-2.5 pt-1">
             <motion.a
-              href="#"
+              href="/signup"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white"
               style={{
                 background: "linear-gradient(135deg, #00D4FF 0%, #6D5DFB 100%)",

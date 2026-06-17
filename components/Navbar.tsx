@@ -3,7 +3,12 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { PulseLogo } from "./PulseLogo";
 
-const navLinks = ["Product", "Features", "Pricing", "Demo"];
+const navLinks = [
+  { label: "Product", href: "/product" },
+  { label: "Features", href: "/features" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Demo", href: "/demo" },
+];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -33,14 +38,14 @@ export default function Navbar() {
       <div className="hidden md:flex items-center gap-7">
         {navLinks.map((link) => (
           <a
-            key={link}
-            href="#"
+            key={link.label}
+            href={link.href}
             className="text-[13px] font-medium transition-colors duration-150"
             style={{ color: "#4D5E78" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#C8D0E8")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#4D5E78")}
           >
-            {link}
+            {link.label}
           </a>
         ))}
       </div>
@@ -48,7 +53,7 @@ export default function Navbar() {
       {/* Actions */}
       <div className="hidden md:flex items-center gap-2">
         <a
-          href="#"
+          href="/signin"
           className="text-[13px] font-medium px-3.5 py-1.5 rounded-md transition-colors"
           style={{ color: "#4D5E78" }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#C8D0E8")}
@@ -57,7 +62,7 @@ export default function Navbar() {
           Sign in
         </a>
         <motion.a
-          href="#"
+          href="/signup"
           className="text-[13px] font-semibold px-4 py-1.5 rounded-md text-white"
           style={{ background: "#6D5DFB" }}
           whileHover={{ background: "#7C6EFC", scale: 1.01 }}
@@ -85,11 +90,18 @@ export default function Navbar() {
           animate={{ opacity: 1, y: 0 }}
         >
           {navLinks.map((link) => (
-            <a key={link} href="#" className="text-sm font-medium py-2 px-3 rounded-md" style={{ color: "#6B7A9F" }}>
-              {link}
+            <a key={link.label} href={link.href} className="text-sm font-medium py-2 px-3 rounded-md" style={{ color: "#6B7A9F" }}>
+              {link.label}
             </a>
           ))}
-          <a href="#" className="text-sm font-semibold px-4 py-2.5 rounded-md text-white text-center mt-1" style={{ background: "#6D5DFB" }}>
+          <a
+            href="/signin"
+            className="text-sm font-medium py-2 px-3 rounded-md text-center"
+            style={{ color: "#C8D0E8", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            Sign in
+          </a>
+          <a href="/signup" className="text-sm font-semibold px-4 py-2.5 rounded-md text-white text-center mt-1" style={{ background: "#6D5DFB" }}>
             Request access
           </a>
         </motion.div>
