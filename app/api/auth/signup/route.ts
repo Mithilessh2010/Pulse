@@ -2,13 +2,19 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { normalizeEmail, isValidEmail } from "@/lib/auth";
 import { getUsersCollection } from "@/lib/mongodb";
+import { readJsonObject } from "@/lib/request";
 import { createVerificationCode } from "@/lib/verification";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await readJsonObject(request);
+
+    if (!body) {
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    }
+
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const email = normalizeEmail(typeof body.email === "string" ? body.email : "");
     const password = typeof body.password === "string" ? body.password : "";

@@ -17,7 +17,8 @@ import {
   Table2,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import {
   askPulsePrompts,
   askPulseResponses,
@@ -43,6 +44,46 @@ import {
   cardVariants,
   containerVariants,
 } from "@/components/app-shell/AppUI";
+import { ObjectLink } from "@/components/app-shell/ObjectLink";
+import {
+  approvalHref,
+  approvalsForProjectHref,
+  expenseHref,
+  expensesHref,
+  memberHref,
+  projectHref,
+  slugify,
+  taskHref,
+  tasksForProjectHref,
+} from "@/lib/routes";
+
+function stopAction(event: MouseEvent) {
+  event.stopPropagation();
+}
+
+function projectIdFromName(projects: Project[], name: string) {
+  return projects.find((project) => project.name === name)?.id ?? slugify(name);
+}
+
+function memberIdFromName(name: string) {
+  const first = name.split(" ")[0]?.toLowerCase() ?? name.toLowerCase();
+  return slugify(first);
+}
+
+function projectMatchesTeam(projectName: string, selectedTeam: string, teams: { name: string; activeProjects: string[] }[]) {
+  if (selectedTeam === "All teams") return true;
+  return teams.some((team) => team.name === selectedTeam && team.activeProjects.includes(projectName));
+}
+
+function memberMatchesTeam(role: string, selectedTeam: string) {
+  if (selectedTeam === "All teams") return true;
+  if (selectedTeam === "Product") return role.includes("Product");
+  if (selectedTeam === "Design") return role.includes("Design");
+  if (selectedTeam === "Engineering") return role.includes("Engineer");
+  if (selectedTeam === "Operations") return role.includes("Operations");
+  if (selectedTeam === "Finance") return role.includes("Finance");
+  return true;
+}
 
 function priorityColor(priority: string) {
   if (priority === "High") return "#F87171";
@@ -70,13 +111,34 @@ function csvEscape(value: string | number) {
 
 function ProjectCard({ project, onView }: { project: Project; onView?: () => void }) {
   return (
-    <motion.div variants={cardVariants} whileHover={{ y: -3 }} className="glass-raised rounded-2xl p-4">
+    <motion.div
+      variants={cardVariants}
+      whileHover={{ y: -3 }}
+      onClick={onView}
+      onKeyDown={(event) => {
+        if (onView && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onView();
+        }
+      }}
+      role={onView ? "button" : undefined}
+      tabIndex={onView ? 0 : undefined}
+      className={`glass-raised rounded-2xl p-4 outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--accent)]/45 ${onView ? "cursor-pointer hover:border-[var(--accent)]/35" : ""}`}
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">{project.name}</h3>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">Owner {project.owner} · {project.completedTasks}/{project.tasks} tasks · Due {project.due}</p>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            Owner{" "}
+            <ObjectLink type="member" id={memberIdFromName(project.owner)} label={project.owner} onClick={stopAction} />
+            {" "}·{" "}
+            <ObjectLink type="task" id="" href={tasksForProjectHref(project.id)} label={`${project.completedTasks}/${project.tasks} tasks`} onClick={stopAction} />
+            {" "}· Due {project.due}
+          </p>
         </div>
-        <StatusBadge label={project.statusLabel} />
+        <ObjectLink type="project" id={project.id} href={projectHref(project.id, project.statusLabel === "At Risk" ? "risk" : undefined)} label={project.statusLabel} variant="badge" onClick={stopAction}>
+          <StatusBadge label={project.statusLabel} />
+        </ObjectLink>
       </div>
       <div className="mb-1.5 flex justify-between text-xs text-[var(--text-secondary)]">
         <span>Progress</span>
@@ -89,10 +151,13 @@ function ProjectCard({ project, onView }: { project: Project; onView?: () => voi
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">
         <MetricPill label="Predicted finish" value={project.predictedFinish} />
-        <MetricPill label="Budget" value={project.budgetLabel} />
+        <ObjectLink type="expense" id="" href={expensesHref({ project: project.id })} label={`Budget ${project.budgetLabel}`} variant="badge" onClick={stopAction}>
+          <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)]">Budget</span>
+          <span className="font-semibold text-[var(--text-primary)]">{project.budgetLabel}</span>
+        </ObjectLink>
       </div>
       {onView ? (
-        <button type="button" onClick={onView} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/40 hover:text-[var(--text-primary)]">
+        <button type="button" onClick={(event) => { stopAction(event); onView(); }} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/40 hover:text-[var(--text-primary)]">
           View details
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
@@ -119,13 +184,13 @@ function TaskCard({ task, onClick }: { task: Task; onClick?: () => void }) {
   );
 }
 
-function ApprovalCard({ approval }: { approval: Approval }) {
+function ApprovalCard({ approval, onOpen }: { approval: Approval; onOpen?: () => void }) {
   const approveApproval = usePulseStore((state) => state.approveApproval);
   const requestApprovalChanges = usePulseStore((state) => state.requestApprovalChanges);
   const statusLabel = approval.status === "Waiting" ? approval.type : approval.status;
 
   return (
-    <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4">
+    <div onClick={onOpen} role={onOpen ? "button" : undefined} tabIndex={onOpen ? 0 : undefined} className={`rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--accent)]/45 ${onOpen ? "cursor-pointer hover:border-[var(--accent)]/40" : ""}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">{approval.title}</p>
@@ -144,7 +209,7 @@ function ApprovalCard({ approval }: { approval: Approval }) {
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => approveApproval(approval.id)}
+          onClick={(event) => { stopAction(event); approveApproval(approval.id); }}
           className="inline-flex items-center gap-2 rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#7C6EFC]"
         >
           <Check className="h-3.5 w-3.5" />
@@ -152,7 +217,7 @@ function ApprovalCard({ approval }: { approval: Approval }) {
         </button>
         <button
           type="button"
-          onClick={() => requestApprovalChanges(approval.id)}
+          onClick={(event) => { stopAction(event); requestApprovalChanges(approval.id); }}
           className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
         >
           Request Changes
@@ -164,16 +229,17 @@ function ApprovalCard({ approval }: { approval: Approval }) {
 
 function AttachmentChip({ label }: { label: string }) {
   return (
-    <button type="button" className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)]">
       <Link className="h-3.5 w-3.5" />
       {label}
-    </button>
+    </span>
   );
 }
 
 function ApprovalDetail({ approval }: { approval: Approval & { resolvedAt?: string } }) {
   const approveApproval = usePulseStore((state) => state.approveApproval);
   const requestApprovalChanges = usePulseStore((state) => state.requestApprovalChanges);
+  const projects = usePulseStore((state) => state.projects);
   const resolved = approval.status !== "Waiting";
 
   return (
@@ -182,7 +248,7 @@ function ApprovalDetail({ approval }: { approval: Approval & { resolvedAt?: stri
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-base font-semibold text-[var(--text-primary)]">{approval.title}</p>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">{approval.type} · Submitted by {approval.submittedBy} · {approval.time}</p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">{approval.type} · Submitted by <ObjectLink type="member" id={memberIdFromName(approval.submittedBy)} label={approval.submittedBy} /> · <ObjectLink type="project" id={projectIdFromName(projects, approval.project)} label={approval.project} /> · {approval.time}</p>
           </div>
           <StatusBadge label={approval.status} />
         </div>
@@ -231,7 +297,10 @@ function ApprovalDetail({ approval }: { approval: Approval & { resolvedAt?: stri
 }
 
 export function CommandCenterScreen() {
+  const router = useRouter();
   const projects = usePulseStore((state) => state.projects);
+  const teams = usePulseStore((state) => state.teams);
+  const selectedTeam = usePulseStore((state) => state.selectedTeamContext);
   const tasks = usePulseStore((state) => state.tasks);
   const approvals = usePulseStore((state) => state.approvals);
   const expenses = usePulseStore((state) => state.expenses);
@@ -243,7 +312,12 @@ export function CommandCenterScreen() {
   const [commandPrompt, setCommandPrompt] = useState("");
   const [commandAnswer, setCommandAnswer] = useState("");
   const [isAsking, setIsAsking] = useState(false);
-  const pendingApprovals = approvals.filter((approval) => approval.status === "Waiting");
+  const contextProjects = projects.filter((project) => projectMatchesTeam(project.name, selectedTeam, teams));
+  const contextProjectNames = new Set(contextProjects.map((project) => project.name));
+  const contextTasks = tasks.filter((task) => selectedTeam === "All teams" || contextProjectNames.has(task.project));
+  const contextBlockers = blockers.filter((blocker) => selectedTeam === "All teams" || contextProjectNames.has(blocker.project));
+  const contextTeamMembers = teamMembers.filter((member) => memberMatchesTeam(member.role, selectedTeam));
+  const pendingApprovals = approvals.filter((approval) => approval.status === "Waiting" && (selectedTeam === "All teams" || contextProjectNames.has(approval.project)));
   const approvalSummary = pendingApprovals.length
     ? `${pendingApprovals.filter((approval) => approval.type === "Task Proof").length} task approvals · ${pendingApprovals.filter((approval) => approval.type === "Expenses").length} expense approvals · ${pendingApprovals.filter((approval) => approval.type === "Client Updates").length} client updates`
     : "No approvals waiting.";
@@ -279,7 +353,7 @@ export function CommandCenterScreen() {
       <div className="grid items-start gap-4 xl:grid-cols-4">
       <DashboardCard title="AI Morning Briefing" subtitle="Priority signals across the workspace" className="xl:col-span-2">
         <div className="rounded-xl border border-[#6D5DFB]/20 bg-[linear-gradient(135deg,rgba(109,93,251,0.15),rgba(0,180,216,0.08))] p-4">
-          <p className="text-[15px] leading-7 text-[var(--text-primary)]">Today: {tasks.filter((task) => task.status === "Due Today").length} tasks are due, {pendingApprovals.length} approvals are waiting, {blockers.length} blockers need attention, and Website Redesign is 3 days behind pace.</p>
+          <p className="text-[15px] leading-7 text-[var(--text-primary)]">Today: {contextTasks.filter((task) => task.status === "Due Today").length} tasks are due, {pendingApprovals.length} approvals are waiting, {contextBlockers.length} blockers need attention, and Website Redesign is 3 days behind pace.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" onClick={viewBlockers} className="rounded-lg bg-white px-3 py-2 text-[13px] font-semibold text-[#07090F] transition hover:bg-[#D7E1F7]">View blockers</button>
             <button type="button" onClick={() => setBriefingUpdate(askPulseResponses["Write a weekly leadership update"])} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]">Generate update</button>
@@ -292,7 +366,7 @@ export function CommandCenterScreen() {
         <form onSubmit={(event) => { event.preventDefault(); askCommand(); }} className="flex flex-col gap-3 sm:flex-row">
           <label className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-            <input value={commandPrompt} onChange={(event) => setCommandPrompt(event.target.value)} placeholder="Ask Pulse what needs attention..." className="h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/60" />
+            <input aria-label="Ask Pulse what needs attention" value={commandPrompt} onChange={(event) => setCommandPrompt(event.target.value)} placeholder="Ask Pulse what needs attention..." className="h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/60" />
           </label>
           <button disabled={isAsking} className="rounded-xl bg-[#6D5DFB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7C6EFC] disabled:opacity-60">Submit</button>
         </form>
@@ -311,34 +385,42 @@ export function CommandCenterScreen() {
       <DashboardCard title="Expenses/Budget" subtitle="Monthly workspace spend">
         <p className="text-2xl font-semibold text-[var(--text-primary)]">${expenses.filter((expense) => expense.status === "Approved").reduce((sum, expense) => sum + expense.amountValue, 0).toLocaleString()} <span className="text-sm font-normal text-[var(--text-muted)]">of $7,500</span></p>
         <div className="mt-3"><ProgressBar value={64} color="#FBBF24" /></div>
-        <p className="mt-3 text-sm text-[var(--text-secondary)]">64% used · {expenses.filter((expense) => expense.status !== "Approved").length} pending expenses · Software highest category</p>
+        <p className="mt-3 text-sm text-[var(--text-secondary)]">
+          <ObjectLink type="expense" id="" href="/app/expenses" label="64% used" />
+          {" "}·{" "}
+          <ObjectLink type="expense" id="" href={expensesHref({ status: "Pending" })} label={`${expenses.filter((expense) => expense.status !== "Approved").length} pending expenses`} />
+          {" "}· Software highest category
+        </p>
       </DashboardCard>
         </div>
       <DashboardCard title="Project Health" subtitle="Predicted finish and risk" className="xl:col-span-2">
-        <div className="max-h-[620px] space-y-3 overflow-y-auto pr-1">{projects.map((project) => <ProjectCard key={project.name} project={project} />)}</div>
+        <div className="max-h-[620px] space-y-3 overflow-y-auto pr-1">{contextProjects.map((project) => <ProjectCard key={project.name} project={project} onView={() => router.push(projectHref(project.id))} />)}</div>
         <a href="/app/projects" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#00B4D8]">Open projects <ArrowRight className="h-4 w-4" /></a>
       </DashboardCard>
       </div>
       <div className="grid items-start gap-4 xl:grid-cols-4">
       <DashboardCard title="Approval Queue" subtitle={approvalSummary} className="xl:col-span-2">
-        {pendingApprovals.length ? <div className="grid gap-3 md:grid-cols-2">{pendingApprovals.slice(0, 4).map((approval) => <ApprovalCard key={approval.id} approval={approval} />)}</div> : <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center"><EmptyState title="Approval queue clear" description="There are no items waiting for review." /><a href="/app/approvals" className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-center text-xs font-semibold text-[var(--text-secondary)]">View approved history</a><a href="/app/tasks" className="rounded-lg bg-[var(--accent)] px-3 py-2 text-center text-xs font-semibold text-white">Go to Tasks</a></div>}
+        {pendingApprovals.length ? <div className="grid gap-3 md:grid-cols-2">{pendingApprovals.slice(0, 4).map((approval) => <ApprovalCard key={approval.id} approval={approval} onOpen={() => router.push(approvalHref(approval.id))} />)}</div> : <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center"><EmptyState title="Approval queue clear" description="There are no items waiting for review." /><a href="/app/approvals" className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-center text-xs font-semibold text-[var(--text-secondary)]">View approved history</a><a href="/app/tasks" className="rounded-lg bg-[var(--accent)] px-3 py-2 text-center text-xs font-semibold text-white">Go to Tasks</a></div>}
       </DashboardCard>
       <DashboardCard title="Team Workload Health" subtitle="Capacity, availability, and support needs">
         <div className="mb-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
           Workload estimate
           <TooltipInfo text="Pulse estimates workload health from assigned tasks, deadlines, blockers, and meeting load. It is not a productivity score." />
         </div>
-        <div className="space-y-4">{teamMembers.map((m) => <div key={m.name}><div className="mb-2 flex justify-between text-sm"><span className="text-[var(--text-primary)]">{m.shortName}</span><span className="text-[var(--text-secondary)]">{m.capacity}% · {m.availability}</span></div><ProgressBar value={m.capacity} color={m.status === "Near Capacity" ? "#F87171" : "#00B4D8"} /><p className="mt-1 text-xs text-[var(--text-muted)]">Focus load: {m.focusLoad} · Support: {m.supportNeeded ? "Yes" : "No"}</p></div>)}</div>
+        <div className="space-y-4">{contextTeamMembers.map((m) => <div key={m.name}><div className="mb-2 flex justify-between text-sm"><ObjectLink type="member" id={m.id} label={m.shortName} /><span className="text-[var(--text-secondary)]">{m.capacity}% · {m.availability}</span></div><ProgressBar value={m.capacity} color={m.status === "Near Capacity" ? "#F87171" : "#00B4D8"} /><p className="mt-1 text-xs text-[var(--text-muted)]">Focus load: {m.focusLoad} · Support: {m.supportNeeded ? "Yes" : "No"}</p></div>)}</div>
       </DashboardCard>
       <DashboardCard title="Blockers" subtitle="Items slowing active work" className="transition" >
         <div ref={blockersRef} className="space-y-2 rounded-xl transition">
-          {blockers.map((b) => <div key={b.id} className="rounded-xl border border-red-400/15 bg-red-400/[0.06] p-3"><div className="flex gap-3 text-sm text-[var(--text-primary)]"><AlertTriangle className="h-4 w-4 shrink-0 text-[#F87171]" />{b.title}</div><p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">Owner {b.owner} · {b.impact}</p><p className="mt-1 text-xs leading-5 text-[#FBBF24]">Next: {b.suggestedNextAction}</p></div>)}
+          {contextBlockers.map((b) => {
+            const linkedProjectId = projectIdFromName(projects, b.project);
+            return <button key={b.id} type="button" onClick={() => router.push(projectHref(linkedProjectId, b.id))} className="block w-full rounded-xl border border-red-400/15 bg-red-400/[0.06] p-3 text-left transition hover:border-red-300/35"><div className="flex gap-3 text-sm text-[var(--text-primary)]"><AlertTriangle className="h-4 w-4 shrink-0 text-[#F87171]" />{b.title}</div><p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">Owner {b.owner} · {b.impact}</p><p className="mt-1 text-xs leading-5 text-[#FBBF24]">Next: {b.suggestedNextAction}</p></button>;
+          })}
         </div>
       </DashboardCard>
       </div>
       <div className="grid items-start gap-4 xl:grid-cols-3">
       <DashboardCard title="Tasks Due Today" subtitle="Work needing movement">
-        <div className="space-y-2">{tasks.slice(0, 5).map((task) => <TaskCard key={task.title} task={task} />)}</div>
+        <div className="space-y-2">{contextTasks.slice(0, 5).map((task) => <TaskCard key={task.title} task={task} onClick={() => router.push(taskHref(task.id))} />)}</div>
       </DashboardCard>
       <AskPulseCard answer={askPulseResponses["What projects are at risk?"]} />
       <ActivityFeed items={activityFeed} />
@@ -348,16 +430,23 @@ export function CommandCenterScreen() {
 }
 
 export function ProjectsScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const projects = usePulseStore((state) => state.projects);
+  const teams = usePulseStore((state) => state.teams);
+  const selectedTeam = usePulseStore((state) => state.selectedTeamContext);
   const createProject = usePulseStore((state) => state.createProject);
   const [view, setView] = useState("Grid");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
   const [sort, setSort] = useState("Risk");
   const [notice, setNotice] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[1]?.id ?? projects[0]?.id);
+  const queryProjectId = searchParams.get("project");
+  const focus = searchParams.get("focus");
+  const [selectedProjectId, setSelectedProjectId] = useState(queryProjectId ?? projects[1]?.id ?? projects[0]?.id);
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? projects[0];
   const filteredProjects = projects
+    .filter((project) => projectMatchesTeam(project.name, selectedTeam, teams))
     .filter((project) => status === "All" || project.health === status)
     .filter((project) => project.name.toLowerCase().includes(query.toLowerCase()) || project.owner.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => {
@@ -367,13 +456,24 @@ export function ProjectsScreen() {
       return (score[b.deadlineRisk as keyof typeof score] ?? 0) - (score[a.deadlineRisk as keyof typeof score] ?? 0);
     });
 
+  useEffect(() => {
+    if (queryProjectId && projects.some((project) => project.id === queryProjectId)) {
+      setSelectedProjectId(queryProjectId);
+    }
+  }, [projects, queryProjectId]);
+
+  function selectProject(projectId: string) {
+    setSelectedProjectId(projectId);
+    router.push(projectHref(projectId));
+  }
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <PageHeader title="Projects" description="Plan work, track health, and see predicted delivery across active initiatives." action={<button type="button" onClick={() => { const id = createProject(); setSelectedProjectId(id); setNotice("Project saved to the workspace."); }} className="inline-flex items-center gap-2 rounded-lg bg-[#6D5DFB] px-4 py-2 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Create Project</button>} />
       {notice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{notice}</div> : null}
       <div className="mb-4 flex flex-wrap gap-2">{["Grid", "Kanban", "Timeline"].map((option) => <button key={option} type="button" onClick={() => setView(option)} className={`rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm ${view === option ? "bg-[#6D5DFB] text-white" : "bg-[var(--card-bg)] text-[var(--text-muted)]"}`}>{option}</button>)}</div>
       <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects or owners..." className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" />
+        <input aria-label="Search projects or owners" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects or owners..." className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" />
         <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">
           {["All", "On Track", "At Risk", "Needs Review", "Blocked"].map((item) => <option key={item}>{item}</option>)}
         </select>
@@ -381,32 +481,44 @@ export function ProjectsScreen() {
           {["Risk", "Progress", "Due date"].map((item) => <option key={item}>{item}</option>)}
         </select>
       </div>
-      {view === "Grid" ? <div className="grid gap-4 lg:grid-cols-3">{filteredProjects.map((project) => <ProjectCard key={project.name} project={project} onView={() => setSelectedProjectId(project.id)} />)}</div> : null}
-      {view === "Kanban" ? <div className="grid gap-3 md:grid-cols-4">{["Planning","In Progress","Review","Done"].map((col) => <DashboardCard key={col} title={col} subtitle={`${projects.filter((p) => p.column === col).length} projects`}><div className="space-y-2">{projects.filter((p) => p.column === col).map((p) => <button type="button" onClick={() => setSelectedProjectId(p.id)} key={p.name} className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left text-xs text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/35"><span className="font-semibold text-[var(--text-primary)]">{p.name}</span><span className="mt-1 block">{p.progress}% · {p.health}</span></button>)}</div></DashboardCard>)}</div> : null}
+      {view === "Grid" ? <div className="grid gap-4 lg:grid-cols-3">{filteredProjects.map((project) => <ProjectCard key={project.name} project={project} onView={() => selectProject(project.id)} />)}</div> : null}
+      {view === "Kanban" ? <div className="grid gap-3 md:grid-cols-4">{["Planning","In Progress","Review","Done"].map((col) => <DashboardCard key={col} title={col} subtitle={`${filteredProjects.filter((p) => p.column === col).length} projects`}><div className="space-y-2">{filteredProjects.filter((p) => p.column === col).map((p) => <button type="button" onClick={() => selectProject(p.id)} key={p.name} className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left text-xs text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/35"><span className="font-semibold text-[var(--text-primary)]">{p.name}</span><span className="mt-1 block">{p.progress}% · {p.health}</span></button>)}</div></DashboardCard>)}</div> : null}
       {view === "Timeline" ? <DashboardCard title="Timeline" subtitle="Predicted finish against due date"><div className="space-y-4">{filteredProjects.map((project) => <div key={project.id}><div className="mb-2 flex justify-between text-sm"><span className="text-[var(--text-primary)]">{project.name}</span><span className="text-[var(--text-muted)]">Due {project.due} · Finish {project.predictedFinish}</span></div><div className="h-8 rounded-full border border-[var(--border-subtle)] bg-[var(--card-bg)] p-1"><motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(project.progress, 18)}%` }} className="h-full rounded-full bg-[linear-gradient(90deg,#6D5DFB,#00B4D8)]" /></div></div>)}</div></DashboardCard> : null}
       {!filteredProjects.length ? <EmptyState title="No projects found" description="Try another status, search term, or sort option." /> : null}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        {selectedProject ? <DashboardCard title="Project Detail" subtitle={`${selectedProject.name} pacing preview`}><ProjectCard project={selectedProject} /><p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">AI pacing insight: {selectedProject.insight}</p></DashboardCard> : null}
-        {selectedProject ? <DashboardCard title="Risk Breakdown" subtitle="Deadline, budget, blockers, and team context"><div className="grid gap-3 sm:grid-cols-2"><MetricPill label="Deadline risk" value={selectedProject.deadlineRisk} /><MetricPill label="Budget risk" value={selectedProject.budgetRisk} /><MetricPill label="Spend" value={selectedProject.spendLabel} /><MetricPill label="Blockers" value={String(selectedProject.blockersCount)} /></div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm leading-6 text-[var(--text-secondary)]">Owner {selectedProject.owner} · Team size {selectedProject.team} · {selectedProject.completedTasks}/{selectedProject.tasks} tasks complete</div></DashboardCard> : null}
+        {selectedProject ? <DashboardCard title="Project Detail" subtitle={`${selectedProject.name} pacing preview${focus ? ` · focused on ${focus}` : ""}`}><ProjectCard project={selectedProject} /><p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">AI pacing insight: {selectedProject.insight}</p></DashboardCard> : null}
+        {selectedProject ? <DashboardCard title="Risk Breakdown" subtitle="Deadline, budget, blockers, and team context"><div className="grid gap-3 sm:grid-cols-2"><MetricPill label="Deadline risk" value={selectedProject.deadlineRisk} /><MetricPill label="Budget risk" value={selectedProject.budgetRisk} /><MetricPill label="Spend" value={selectedProject.spendLabel} /><MetricPill label="Blockers" value={String(selectedProject.blockersCount)} /></div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm leading-6 text-[var(--text-secondary)]">Owner <ObjectLink type="member" id={memberIdFromName(selectedProject.owner)} label={selectedProject.owner} /> · Team size {selectedProject.team} · <ObjectLink type="task" id="" href={tasksForProjectHref(selectedProject.id)} label={`${selectedProject.completedTasks}/${selectedProject.tasks} tasks complete`} /> · <ObjectLink type="approval" id="" href={approvalsForProjectHref(selectedProject.id)} label="linked approvals" /> · <ObjectLink type="expense" id="" href={expensesHref({ project: selectedProject.id })} label="budget detail" /></div></DashboardCard> : null}
       </div>
     </motion.div>
   );
 }
 
 export function TasksScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projects = usePulseStore((state) => state.projects);
+  const teams = usePulseStore((state) => state.teams);
+  const selectedTeam = usePulseStore((state) => state.selectedTeamContext);
   const tasks = usePulseStore((state) => state.tasks);
   const updateTask = usePulseStore((state) => state.updateTask);
+  const toggleSubtask = usePulseStore((state) => state.toggleSubtask);
   const completeTask = usePulseStore((state) => state.completeTask);
   const submitTaskProof = usePulseStore((state) => state.submitTaskProof);
   const [filter, setFilter] = useState("All");
   const [priority, setPriority] = useState("All priorities");
   const [owner, setOwner] = useState("All owners");
   const [search, setSearch] = useState("");
-  const [selectedTaskId, setSelectedTaskId] = useState(tasks[1]?.id ?? tasks[0]?.id);
+  const queryTaskId = searchParams.get("task");
+  const queryProjectId = searchParams.get("project");
+  const queryProjectName = queryProjectId ? projects.find((project) => project.id === queryProjectId)?.name : null;
+  const [selectedTaskId, setSelectedTaskId] = useState(queryTaskId ?? tasks[1]?.id ?? tasks[0]?.id);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? tasks[0];
   const [taskDecision, setTaskDecision] = useState("Waiting Review");
   const filters = ["All", "My Tasks", "Due Today", "Blocked", "Waiting Approval", "Completed"];
-  const visible = (filter === "All" ? tasks : tasks.filter((task) => task.status === filter || (filter === "My Tasks" && task.owner === "Sam")))
+  const contextProjectNames = new Set(projects.filter((project) => projectMatchesTeam(project.name, selectedTeam, teams)).map((project) => project.name));
+  const contextTasks = tasks.filter((task) => selectedTeam === "All teams" || contextProjectNames.has(task.project));
+  const visible = (filter === "All" ? contextTasks : contextTasks.filter((task) => task.status === filter || (filter === "My Tasks" && task.owner === "Sam")))
+    .filter((task) => !queryProjectName || task.project === queryProjectName)
     .filter((task) => priority === "All priorities" || task.priority === priority)
     .filter((task) => owner === "All owners" || task.owner === owner)
     .filter((task) => {
@@ -414,24 +526,41 @@ export function TasksScreen() {
       return text.includes(search.toLowerCase());
     });
 
+  useEffect(() => {
+    if (queryTaskId && tasks.some((task) => task.id === queryTaskId)) {
+      const nextTask = tasks.find((task) => task.id === queryTaskId);
+      setSelectedTaskId(queryTaskId);
+      if (nextTask) setTaskDecision(nextTask.proofStatus);
+    }
+  }, [queryTaskId, tasks]);
+
+  function selectTask(task: Task) {
+    setSelectedTaskId(task.id);
+    setTaskDecision(task.proofStatus);
+    router.push(taskHref(task.id));
+  }
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <PageHeader title="Tasks" description="Review priorities, proof status, due dates, owners, and task detail context." />
       <div className="mb-4 flex flex-wrap gap-2">{filters.map((f) => <button key={f} onClick={() => setFilter(f)} className={`rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm ${filter === f ? "bg-[#6D5DFB] text-white" : "bg-[var(--card-bg)] text-[var(--text-muted)]"}`}><Filter className="mr-1 inline h-3.5 w-3.5" />{f}</button>)}</div>
       <div className="mb-4 grid gap-3 md:grid-cols-3">
         <select value={priority} onChange={(event) => setPriority(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["All priorities", "High", "Medium", "Low"].map((item) => <option key={item}>{item}</option>)}</select>
-        <select value={owner} onChange={(event) => setOwner(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["All owners", ...Array.from(new Set(tasks.map((task) => task.owner)))].map((item) => <option key={item}>{item}</option>)}</select>
+        <select value={owner} onChange={(event) => setOwner(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["All owners", ...Array.from(new Set(contextTasks.map((task) => task.owner)))].map((item) => <option key={item}>{item}</option>)}</select>
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-muted)]"><SlidersHorizontal className="mr-2 inline h-4 w-4" />Sorted by urgency</div>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <DashboardCard title="Task List" subtitle="Search and review active work"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks..." className="mb-3 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="space-y-2">{visible.length ? visible.map((task) => <TaskCard key={task.title} task={task} onClick={() => { setSelectedTaskId(task.id); setTaskDecision(task.proofStatus); }} />) : <EmptyState title="No tasks found" description="Try a different search or filter." />}</div></DashboardCard>
-        {selectedTask ? <DashboardCard title="Task Detail" subtitle="Proof submission and review"><div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{selectedTask.title}</p><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{selectedTask.project} · {selectedTask.owner} · {selectedTask.due}</p><div className="mt-3 flex flex-wrap gap-2"><StatusBadge label={selectedTask.priority} /><StatusBadge label={selectedTask.status} /><StatusBadge label={taskDecision} /></div></div><div className="mt-4 space-y-2">{selectedTask.subtasks.map((s) => <button type="button" key={s} onClick={() => updateTask(selectedTask.id, { comments: selectedTask.comments + 1 })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-left text-sm text-[var(--text-secondary)]"><Check className="h-4 w-4 text-emerald-300" />{s}</button>)}</div><div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">AI review: {selectedTask.aiReview}</div><div className="mt-4 flex flex-wrap gap-2">{["Link","File","Screenshot","Video"].map((chip) => <button type="button" key={chip} onClick={() => submitTaskProof(selectedTask.id, `${chip} proof submitted`)} className="rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-xs text-[var(--text-muted)]">{chip}</button>)}</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => { completeTask(selectedTask.id); setTaskDecision("Approved"); }} className="rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white">Complete task</button><button type="button" onClick={() => submitTaskProof(selectedTask.id)} className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Submit proof</button><button type="button" onClick={() => { updateTask(selectedTask.id, { proofStatus: "Missing", proof: "Changes Requested" }); setTaskDecision("Changes Requested"); }} className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Request Changes</button></div></DashboardCard> : null}
+        <DashboardCard title="Task List" subtitle={queryProjectName ? `Focused on ${queryProjectName}` : "Search and review active work"}><input aria-label="Search tasks" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks..." className="mb-3 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="space-y-2">{visible.length ? visible.map((task) => <TaskCard key={task.title} task={task} onClick={() => selectTask(task)} />) : <EmptyState title="No tasks found" description="Try a different search or filter." />}</div></DashboardCard>
+        {selectedTask ? <DashboardCard title="Task Detail" subtitle="Proof submission and review"><div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{selectedTask.title}</p><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]"><ObjectLink type="project" id={projectIdFromName(projects, selectedTask.project)} label={selectedTask.project} /> · <ObjectLink type="member" id={memberIdFromName(selectedTask.owner)} label={selectedTask.owner} /> · Due {selectedTask.due}</p><div className="mt-3 flex flex-wrap gap-2"><StatusBadge label={selectedTask.priority} /><StatusBadge label={selectedTask.status} /><StatusBadge label={taskDecision} /></div></div><div className="mt-4 space-y-2">{selectedTask.subtasks.map((s) => { const checked = selectedTask.completedSubtasks?.includes(s) ?? false; return <button type="button" key={s} aria-pressed={checked} onClick={() => toggleSubtask(selectedTask.id, s)} className={`flex w-full items-center gap-2 rounded-lg border p-2 text-left text-sm transition ${checked ? "border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-100" : "border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-secondary)] hover:border-[#6D5DFB]/35"}`}><Check className={`h-4 w-4 ${checked ? "text-emerald-300" : "text-[var(--text-muted)]"}`} />{s}</button>; })}</div><div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">AI review: {selectedTask.aiReview}</div><div className="mt-4 flex flex-wrap gap-2">{["Link","File","Screenshot","Video"].map((chip) => <button type="button" key={chip} onClick={() => submitTaskProof(selectedTask.id, `${chip} proof submitted`)} className="rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-xs text-[var(--text-muted)]">{chip}</button>)}</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => { completeTask(selectedTask.id); setTaskDecision("Approved"); }} className="rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white">Complete task</button><button type="button" onClick={() => submitTaskProof(selectedTask.id)} className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Submit proof</button><button type="button" onClick={() => { updateTask(selectedTask.id, { proofStatus: "Missing", proof: "Changes Requested" }); setTaskDecision("Changes Requested"); }} className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Request Changes</button></div></DashboardCard> : null}
       </div>
     </motion.div>
   );
 }
 
 export function ApprovalsScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projects = usePulseStore((state) => state.projects);
   const approvals = usePulseStore((state) => state.approvals);
   const approveApproval = usePulseStore((state) => state.approveApproval);
   const [ready, setReady] = useState(false);
@@ -439,9 +568,14 @@ export function ApprovalsScreen() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Waiting");
   const [bulkNotice, setBulkNotice] = useState("");
-  const [selectedApprovalId, setSelectedApprovalId] = useState(approvals.find((approval) => approval.status === "Waiting")?.id ?? approvals[0]?.id);
+  const queryApprovalId = searchParams.get("approval");
+  const queryProjectId = searchParams.get("project");
+  const queryStatus = searchParams.get("status");
+  const queryProjectName = queryProjectId ? projects.find((project) => project.id === queryProjectId)?.name : null;
+  const [selectedApprovalId, setSelectedApprovalId] = useState(queryApprovalId ?? approvals.find((approval) => approval.status === "Waiting")?.id ?? approvals[0]?.id);
   const tabs = ["All", "Task Proof", "Expenses", "Client Updates"];
   const visible = (tab === "All" ? approvals : approvals.filter((a) => a.type === tab))
+    .filter((approval) => !queryProjectName || approval.project === queryProjectName)
     .filter((approval) => statusFilter === "All statuses" || approval.status === statusFilter)
     .filter((approval) => `${approval.title} ${approval.project} ${approval.submittedBy}`.toLowerCase().includes(search.toLowerCase()));
   const selectedApproval = approvals.find((approval) => approval.id === selectedApprovalId) ?? visible[0] ?? approvals[0];
@@ -451,16 +585,33 @@ export function ApprovalsScreen() {
 
   useEffect(() => setReady(true), []);
 
+  useEffect(() => {
+    if (queryApprovalId && approvals.some((approval) => approval.id === queryApprovalId)) {
+      setSelectedApprovalId(queryApprovalId);
+    }
+    if (queryStatus) {
+      setStatusFilter(queryStatus === "pending" ? "Waiting" : queryStatus);
+    }
+  }, [approvals, queryApprovalId, queryStatus]);
+
+  function selectApproval(approvalId: string) {
+    setSelectedApprovalId(approvalId);
+    router.push(approvalHref(approvalId));
+  }
+
   function approveVisible() {
     visibleWaiting.forEach((approval) => approveApproval(approval.id));
     setBulkNotice(`${visibleWaiting.length} approvals approved and saved.`);
     setStatusFilter("Approved");
   }
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Approvals" description="Proof, expense, and client update reviews with context attached." action={<button type="button" onClick={approveVisible} disabled={!ready || !visibleWaiting.length} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-55">{ready ? "Approve visible" : "Preparing approvals"}</button>} />{bulkNotice ? <div className="mb-4 rounded-xl border border-[var(--accent-2)]/20 bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">{bulkNotice}</div> : null}<div className="mb-4 grid gap-4 lg:grid-cols-4"><MetricPill label="Waiting approvals" value={String(waiting.length)} /><MetricPill label="High priority" value={String(waiting.filter((approval) => approval.priority === "High").length)} /><MetricPill label="Average review time" value={waiting.length ? "4.2h" : "0h"} /><MetricPill label="Oldest pending" value={oldestPending} /></div><div className="mb-4 flex flex-wrap gap-2">{tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm ${tab === t ? "bg-[var(--accent)] text-white" : "bg-[var(--card-bg)] text-[var(--text-secondary)]"}`}>{t}</button>)}</div><div className="mb-4 grid gap-3 md:grid-cols-[1fr_220px]"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search approvals..." className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]/50" /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["Waiting", "Approved", "Changes Requested", "All statuses"].map((item) => <option key={item}>{item}</option>)}</select></div>{visible.length ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]"><DashboardCard title="Approval list" subtitle={`${visible.length} items in view`}><div className="max-h-[680px] space-y-2 overflow-y-auto pr-1">{visible.map((approval) => <button key={approval.id} type="button" onClick={() => setSelectedApprovalId(approval.id)} className={`block w-full rounded-xl border p-3 text-left transition ${selectedApproval?.id === approval.id ? "border-[var(--accent)]/50 bg-[var(--card-bg)]" : "border-[var(--border-subtle)] bg-[var(--card-bg)] hover:border-[var(--border-strong)]"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[var(--text-primary)]">{approval.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{approval.submittedBy} · {approval.project}</p></div><StatusBadge label={approval.status} /></div><p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">{approval.aiNote}</p><div className="mt-3 flex flex-wrap gap-1.5"><StatusBadge label={approval.type} /><StatusBadge label={approval.priority} /></div></button>)}</div></DashboardCard>{selectedApproval ? <ApprovalDetail approval={selectedApproval} /> : null}</div> : <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center"><EmptyState title="Approval queue clear" description="There are no items waiting for review." /><button type="button" onClick={() => setStatusFilter("Approved")} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)]">View approved history</button><a href="/app/tasks" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-center text-sm font-semibold text-white">Go to Tasks</a></div>}</motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Approvals" description={queryProjectName ? `Focused on ${queryProjectName} approvals.` : "Proof, expense, and client update reviews with context attached."} action={<button type="button" onClick={approveVisible} disabled={!ready || !visibleWaiting.length} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-55">{ready ? "Approve visible" : "Preparing approvals"}</button>} />{bulkNotice ? <div className="mb-4 rounded-xl border border-[var(--accent-2)]/20 bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">{bulkNotice}</div> : null}<div className="mb-4 grid gap-4 lg:grid-cols-4"><MetricPill label="Waiting approvals" value={String(waiting.length)} /><MetricPill label="High priority" value={String(waiting.filter((approval) => approval.priority === "High").length)} /><MetricPill label="Average review time" value={waiting.length ? "4.2h" : "0h"} /><MetricPill label="Oldest pending" value={oldestPending} /></div><div className="mb-4 flex flex-wrap gap-2">{tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm ${tab === t ? "bg-[var(--accent)] text-white" : "bg-[var(--card-bg)] text-[var(--text-secondary)]"}`}>{t}</button>)}</div><div className="mb-4 grid gap-3 md:grid-cols-[1fr_220px]"><input aria-label="Search approvals" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search approvals..." className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]/50" /><select aria-label="Filter approvals by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["Waiting", "Approved", "Changes Requested", "All statuses"].map((item) => <option key={item}>{item}</option>)}</select></div>{visible.length ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]"><DashboardCard title="Approval list" subtitle={`${visible.length} items in view`}><div className="max-h-[680px] space-y-2 overflow-y-auto pr-1">{visible.map((approval) => <div key={approval.id} role="button" tabIndex={0} onClick={() => selectApproval(approval.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") selectApproval(approval.id); }} className={`block w-full rounded-xl border p-3 text-left transition ${selectedApproval?.id === approval.id ? "border-[var(--accent)]/50 bg-[var(--card-bg)]" : "border-[var(--border-subtle)] bg-[var(--card-bg)] hover:border-[var(--border-strong)]"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[var(--text-primary)]">{approval.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]"><ObjectLink type="member" id={memberIdFromName(approval.submittedBy)} label={approval.submittedBy} onClick={stopAction} /> · <ObjectLink type="project" id={projectIdFromName(projects, approval.project)} label={approval.project} onClick={stopAction} /></p></div><StatusBadge label={approval.status} /></div><p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">{approval.aiNote}</p><div className="mt-3 flex flex-wrap gap-1.5"><StatusBadge label={approval.type} /><StatusBadge label={approval.priority} /></div></div>)}</div></DashboardCard>{selectedApproval ? <ApprovalDetail approval={selectedApproval} /> : null}</div> : <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center"><EmptyState title="Approval queue clear" description="There are no items waiting for review." /><button type="button" onClick={() => setStatusFilter("Approved")} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)]">View approved history</button><a href="/app/tasks" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-center text-sm font-semibold text-white">Go to Tasks</a></div>}</motion.div>;
 }
 
 export function ExpensesScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projects = usePulseStore((state) => state.projects);
   const expenseRows = usePulseStore((state) => state.expenses);
   const approveExpense = usePulseStore((state) => state.approveExpense);
   const rejectExpense = usePulseStore((state) => state.rejectExpense);
@@ -468,8 +619,18 @@ export function ExpensesScreen() {
   const [tab, setTab] = useState("All");
   const [showSubmit, setShowSubmit] = useState(false);
   const [exportNotice, setExportNotice] = useState("");
+  const queryExpenseId = searchParams.get("expense");
+  const queryStatus = searchParams.get("status");
+  const queryProjectId = searchParams.get("project");
+  const queryProjectName = queryProjectId ? projects.find((project) => project.id === queryProjectId)?.name : null;
 
-  const visibleExpenses = expenseRows.filter((expense) => tab === "All" || expense.status === tab);
+  useEffect(() => {
+    if (queryStatus) setTab(queryStatus === "pending" ? "Pending" : queryStatus);
+  }, [queryStatus]);
+
+  const visibleExpenses = expenseRows
+    .filter((expense) => tab === "All" || expense.status === tab)
+    .filter((expense) => !queryProjectName || expense.project === queryProjectName);
   const approvedTotal = expenseRows.filter((expense) => expense.status === "Approved").reduce((sum, expense) => sum + expense.amountValue, 0);
 
   function downloadExpenseCsv() {
@@ -505,23 +666,46 @@ export function ExpensesScreen() {
     setExportNotice("Budget brief downloaded.");
   }
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Expenses" description="Track spend, approve expenses, and keep budgets tied to project work." action={<button type="button" onClick={() => setShowSubmit(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#6D5DFB] px-4 py-2 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Submit expense</button>} />{exportNotice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{exportNotice}</div> : null}{showSubmit ? <div className="mb-4 rounded-2xl border border-[#6D5DFB]/25 bg-[#6D5DFB]/10 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[var(--text-primary)]">Submit expense</p><p className="mt-1 text-sm text-[var(--text-muted)]">Expense intake is ready for review workflows. The saved expense persists after refresh.</p><button type="button" onClick={() => { submitExpense(); setShowSubmit(false); }} className="mt-3 rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white">Save expense</button></div><button aria-label="Close submit expense panel" onClick={() => setShowSubmit(false)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button></div></div> : null}<div className="grid gap-4 lg:grid-cols-4"><MetricPill label="Budget used" value={`$${approvedTotal.toLocaleString()}`} /><MetricPill label="Budget total" value="$7,500" /><MetricPill label="Used" value="64%" /><MetricPill label="Pending" value={String(expenseRows.filter((e) => e.status !== "Approved").length)} /></div><div className="mt-4 flex flex-wrap gap-2">{["All", "Pending", "Needs Approval", "Approved", "Rejected"].map((item) => <button key={item} type="button" onClick={() => setTab(item)} className={`rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm ${tab === item ? "bg-[#6D5DFB] text-white" : "bg-[var(--card-bg)] text-[var(--text-muted)]"}`}>{item}</button>)}</div><div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]"><DashboardCard title="Expense Approval Queue" subtitle="Review spend, receipts, and budget impact"><div className="space-y-2">{visibleExpenses.length ? visibleExpenses.map((e) => <div key={e.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><div className="flex flex-wrap justify-between gap-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{e.vendor}</p><StatusBadge label={e.status} /></div><p className="mt-1 text-xs text-[var(--text-muted)]">{e.amount} · {e.category} · {e.submittedBy} · {e.project}</p><p className="mt-2 text-xs text-[var(--text-muted)]">Receipt: {e.receiptStatus} · Suggested category: {e.aiCategorySuggestion}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => approveExpense(e.id)} className="rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#7C6EFC]">Approve</button><button type="button" onClick={() => rejectExpense(e.id)} className="rounded-lg border border-red-400/20 bg-red-400/[0.06] px-3 py-2 text-xs text-red-200 transition hover:border-red-300/40">Reject</button></div></div>) : <EmptyState title="No expenses in this tab" description="Choose another expense status to review." />}</div></DashboardCard><DashboardCard title="Budget and Categories" subtitle="Alerts, project spend, and exports"><StatusBadge label="Medium Risk" /><ProgressBar value={64} color="#FBBF24" /><p className="mt-3 text-sm text-[var(--text-secondary)]">$4,820 used of $7,500. Highest category: Software.</p><div className="mt-4 grid gap-2">{["Software", "Infrastructure", "Meals", "Design"].map((c) => <div key={c} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{c}</div>)}</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={downloadExpenseCsv} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"><Download className="mr-1 inline h-3.5 w-3.5" />Download CSV</button><button type="button" onClick={downloadBudgetBrief} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"><Download className="mr-1 inline h-3.5 w-3.5" />Download brief</button></div></DashboardCard></div></motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Expenses" description={queryProjectName ? `Focused on ${queryProjectName} spend.` : "Track spend, approve expenses, and keep budgets tied to project work."} action={<button type="button" onClick={() => setShowSubmit(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#6D5DFB] px-4 py-2 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Submit expense</button>} />{exportNotice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{exportNotice}</div> : null}{showSubmit ? <div className="mb-4 rounded-2xl border border-[#6D5DFB]/25 bg-[#6D5DFB]/10 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[var(--text-primary)]">Submit expense</p><p className="mt-1 text-sm text-[var(--text-muted)]">Expense intake is ready for review workflows. The saved expense persists after refresh.</p><button type="button" onClick={() => { submitExpense(); setShowSubmit(false); }} className="mt-3 rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white">Save expense</button></div><button aria-label="Close submit expense panel" onClick={() => setShowSubmit(false)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button></div></div> : null}<div className="grid gap-4 lg:grid-cols-4"><MetricPill label="Budget used" value={`$${approvedTotal.toLocaleString()}`} /><MetricPill label="Budget total" value="$7,500" /><MetricPill label="Used" value="64%" /><MetricPill label="Pending" value={String(expenseRows.filter((e) => e.status !== "Approved").length)} /></div><div className="mt-4 flex flex-wrap gap-2">{["All", "Pending", "Needs Approval", "Approved", "Rejected"].map((item) => <button key={item} type="button" onClick={() => setTab(item)} className={`rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm ${tab === item ? "bg-[#6D5DFB] text-white" : "bg-[var(--card-bg)] text-[var(--text-muted)]"}`}>{item}</button>)}</div><div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]"><DashboardCard title="Expense Approval Queue" subtitle="Review spend, receipts, and budget impact"><div className="space-y-2">{visibleExpenses.length ? visibleExpenses.map((e) => <div key={e.id} onClick={() => router.push(expenseHref(e.id))} className={`rounded-xl border bg-[var(--card-bg)] p-3 transition hover:border-[var(--accent)]/40 ${queryExpenseId === e.id ? "border-[var(--accent)]/60" : "border-[var(--border-subtle)]"}`}><div className="flex flex-wrap justify-between gap-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{e.vendor}</p><StatusBadge label={e.status} /></div><p className="mt-1 text-xs text-[var(--text-muted)]">{e.amount} · {e.category} · <ObjectLink type="member" id={memberIdFromName(e.submittedBy)} label={e.submittedBy} onClick={stopAction} /> · <ObjectLink type="project" id={projectIdFromName(projects, e.project)} label={e.project} onClick={stopAction} /></p><p className="mt-2 text-xs text-[var(--text-muted)]">Receipt: {e.receiptStatus} · Suggested category: {e.aiCategorySuggestion}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={(event) => { stopAction(event); approveExpense(e.id); }} className="rounded-lg bg-[#6D5DFB] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#7C6EFC]">Approve</button><button type="button" onClick={(event) => { stopAction(event); rejectExpense(e.id); }} className="rounded-lg border border-red-400/20 bg-red-400/[0.06] px-3 py-2 text-xs text-red-200 transition hover:border-red-300/40">Reject</button></div></div>) : <EmptyState title="No expenses in this tab" description="Choose another expense status to review." />}</div></DashboardCard><DashboardCard title="Budget and Categories" subtitle="Alerts, project spend, and exports"><StatusBadge label="Medium Risk" /><ProgressBar value={64} color="#FBBF24" /><p className="mt-3 text-sm text-[var(--text-secondary)]"><ObjectLink type="expense" id="" href="/app/expenses" label="$4,820 used of $7,500" />. Highest category: Software.</p><div className="mt-4 grid gap-2">{["Software", "Infrastructure", "Meals", "Design"].map((c) => <div key={c} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{c}</div>)}</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={downloadExpenseCsv} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"><Download className="mr-1 inline h-3.5 w-3.5" />Download CSV</button><button type="button" onClick={downloadBudgetBrief} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"><Download className="mr-1 inline h-3.5 w-3.5" />Download brief</button></div></DashboardCard></div></motion.div>;
 }
 
 export function TeamScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const teamMembers = usePulseStore((state) => state.teamMembers);
-  const [selectedMemberId, setSelectedMemberId] = useState(teamMembers[0]?.id);
+  const queryMemberId = searchParams.get("member");
+  const [selectedMemberId, setSelectedMemberId] = useState(queryMemberId ?? teamMembers[0]?.id);
   const selectedMember = teamMembers.find((member) => member.id === selectedMemberId) ?? teamMembers[0];
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Team" description="Workload health, support needed, availability, and delivery confidence without surveillance." /><DashboardCard title="Workload philosophy" subtitle="How Pulse frames team visibility"><p className="text-sm leading-6 text-[var(--text-secondary)]">Pulse does not score people. It helps managers spot workload risk and support needs using tasks, deadlines, blockers, and capacity.</p><div className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">Workload Health <TooltipInfo text="Pulse estimates workload health from assigned tasks, deadlines, blockers, and meeting load. It is not a productivity score." /></div></DashboardCard><div className="mt-4 grid gap-4 lg:grid-cols-4">{teamMembers.map((m) => <DashboardCard key={m.name} title={m.name} subtitle={m.role}><button type="button" onClick={() => setSelectedMemberId(m.id)} className="mb-3 flex w-full items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[#6D5DFB]/35"><span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#6D5DFB] text-sm font-semibold text-white">{m.initials}</span><span><span className="block text-sm font-semibold text-[var(--text-primary)]">{m.shortName}</span><span className="text-xs text-[var(--text-muted)]">{m.availability}</span></span></button><div className="mb-3 flex items-center justify-between"><StatusBadge label={m.status} /><span className="text-sm text-[var(--text-secondary)]">{m.capacity}%</span></div><ProgressBar value={m.capacity} color={m.status === "Near Capacity" ? "#F87171" : "#00B4D8"} /><div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]"><p>Focus load: {m.focusLoad}</p><p>Support needed: {m.supportNeeded ? "Yes" : "No"}</p><p>Assigned tasks: {m.assignedTasks}</p><p>Blocked tasks: {m.blockedTasks}</p><p>Delivery confidence: {m.deliveryConfidence}</p></div></DashboardCard>)}</div>{selectedMember ? <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.9fr]"><DashboardCard title="Team Member Detail" subtitle={`${selectedMember.name} workload context`}><div className="grid gap-3 sm:grid-cols-2"><MetricPill label="Capacity" value={`${selectedMember.capacity}%`} /><MetricPill label="Availability" value={selectedMember.availability} /><MetricPill label="Completed this week" value={String(selectedMember.completedThisWeek)} /><MetricPill label="Blocked tasks" value={String(selectedMember.blockedTasks)} /></div><div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">Suggested action: {selectedMember.suggestedAction}</div></DashboardCard><DashboardCard title="Capacity Recommendations" subtitle="Balancing support without surveillance"><div className="space-y-2">{["Move one task from Maya to Jordan", "Ask Alex whether design approval is blocked", "Sam needs finance numbers before Investor Update can continue"].map((action) => <div key={action} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">{action}</div>)}</div></DashboardCard></div> : null}</motion.div>;
+  useEffect(() => {
+    if (queryMemberId && teamMembers.some((member) => member.id === queryMemberId)) {
+      setSelectedMemberId(queryMemberId);
+    }
+  }, [queryMemberId, teamMembers]);
+
+  function selectMember(memberId: string) {
+    setSelectedMemberId(memberId);
+    router.push(memberHref(memberId));
+  }
+
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Team" description="Workload health, support needed, availability, and delivery confidence without surveillance." /><DashboardCard title="Workload philosophy" subtitle="How Pulse frames team visibility"><p className="text-sm leading-6 text-[var(--text-secondary)]">Pulse does not score people. It helps managers spot workload risk and support needs using tasks, deadlines, blockers, and capacity.</p><div className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">Workload Health <TooltipInfo text="Pulse estimates workload health from assigned tasks, deadlines, blockers, and meeting load. It is not a productivity score." /></div></DashboardCard><div className="mt-4 grid gap-4 lg:grid-cols-4">{teamMembers.map((m) => <DashboardCard key={m.name} title={m.name} subtitle={m.role}><button type="button" onClick={() => selectMember(m.id)} className={`mb-3 flex w-full items-center gap-3 rounded-xl border bg-[var(--card-bg)] p-3 text-left transition hover:border-[#6D5DFB]/35 ${selectedMemberId === m.id ? "border-[var(--accent)]/55" : "border-[var(--border-subtle)]"}`}><span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#6D5DFB] text-sm font-semibold text-white">{m.initials}</span><span><span className="block text-sm font-semibold text-[var(--text-primary)]">{m.shortName}</span><span className="text-xs text-[var(--text-muted)]">{m.availability}</span></span></button><div className="mb-3 flex items-center justify-between"><StatusBadge label={m.status} /><span className="text-sm text-[var(--text-secondary)]">{m.capacity}%</span></div><ProgressBar value={m.capacity} color={m.status === "Near Capacity" ? "#F87171" : "#00B4D8"} /><div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]"><p>Focus load: {m.focusLoad}</p><p>Support needed: {m.supportNeeded ? "Yes" : "No"}</p><p>Assigned tasks: {m.assignedTasks}</p><p>Blocked tasks: {m.blockedTasks}</p><p>Delivery confidence: {m.deliveryConfidence}</p></div></DashboardCard>)}</div>{selectedMember ? <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.9fr]"><DashboardCard title="Team Member Detail" subtitle={`${selectedMember.name} workload context`}><div className="grid gap-3 sm:grid-cols-2"><MetricPill label="Capacity" value={`${selectedMember.capacity}%`} /><MetricPill label="Availability" value={selectedMember.availability} /><MetricPill label="Completed this week" value={String(selectedMember.completedThisWeek)} /><MetricPill label="Blocked tasks" value={String(selectedMember.blockedTasks)} /></div><div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">Suggested action: {selectedMember.suggestedAction}</div></DashboardCard><DashboardCard title="Capacity Recommendations" subtitle="Balancing support without surveillance"><div className="space-y-2">{["Move one task from Maya to Jordan", "Ask Alex whether design approval is blocked", "Sam needs finance numbers before Investor Update can continue"].map((action) => <div key={action} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">{action}</div>)}</div></DashboardCard></div> : null}</motion.div>;
 }
 
 export function AskScreen() {
-  const [prompt, setPrompt] = useState(askPulsePrompts[0]);
-  const [answer, setAnswer] = useState(askPulseResponses[askPulsePrompts[0]]);
+  const searchParams = useSearchParams();
+  const queryPrompt = searchParams.get("prompt") ?? searchParams.get("q");
+  const initialPrompt = queryPrompt || askPulsePrompts[0];
+  const [prompt, setPrompt] = useState(initialPrompt);
+  const [answer, setAnswer] = useState(askPulseResponses[initialPrompt] ?? askPulseResponses[askPulsePrompts[0]]);
   const [isLoading, setIsLoading] = useState(false);
   const [source, setSource] = useState<"openrouter" | "fallback" | "error">("fallback");
-  const [history, setHistory] = useState([{ prompt: askPulsePrompts[0], answer: askPulseResponses[askPulsePrompts[0]], source: "fallback" }]);
+  const [history, setHistory] = useState([{ prompt: initialPrompt, answer: askPulseResponses[initialPrompt] ?? askPulseResponses[askPulsePrompts[0]], source: "fallback" }]);
+
+  useEffect(() => {
+    if (!queryPrompt) return;
+    setPrompt(queryPrompt);
+    setAnswer(askPulseResponses[queryPrompt] ?? askPulseResponses[askPulsePrompts[0]]);
+  }, [queryPrompt]);
 
   async function askPulse(nextPrompt = prompt) {
     const cleanPrompt = nextPrompt.trim();
@@ -551,7 +735,7 @@ export function AskScreen() {
     }
   }
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Ask Pulse" description="A premium command interface for questions about projects, tasks, approvals, workload, and spend." /><div className="grid gap-4 lg:grid-cols-[1fr_360px]"><DashboardCard title="Command Center Chat" subtitle="Answers are grounded in workspace context"><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Ask about blockers, workload, approvals, budget, or what to do next..." className="min-h-[130px] w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-lg text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="mt-4 flex flex-wrap gap-2">{askPulsePrompts.map((p) => <button key={p} type="button" onClick={() => askPulse(p)} className={`rounded-full border px-3 py-1.5 text-xs ${prompt === p ? "border-[#6D5DFB]/50 bg-[#6D5DFB]/15 text-white" : "border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)]"}`}>{p}</button>)}</div><div className="mt-4 flex flex-wrap items-center gap-2"><button type="button" onClick={() => askPulse()} disabled={isLoading} className="rounded-lg bg-[#6D5DFB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7C6EFC] disabled:cursor-not-allowed disabled:opacity-60">{isLoading ? "Generating answer..." : "Ask Pulse"}</button><button type="button" onClick={() => navigator.clipboard?.writeText(answer)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs text-[var(--text-secondary)]"><Copy className="mr-1 inline h-3.5 w-3.5" />Copy response</button><StatusBadge label={source === "openrouter" ? "Live AI" : source === "error" ? "Workspace answer" : "Workspace answer"} /></div><motion.div key={answer} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-4 text-sm leading-6 text-[var(--text-secondary)]">{isLoading ? <LoadingSpinner label="Reviewing projects, tasks, approvals, workload, and spend..." /> : answer}</motion.div><div className="mt-4 space-y-3">{history.slice(-4).map((item, index) => <div key={`${item.prompt}-${index}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold text-[var(--text-muted)]">{item.prompt}</p><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.answer}</p></div>)}</div></DashboardCard><DashboardCard title="Context Panel" subtitle="What Ask Pulse can read"><div className="grid gap-2">{["Projects","Tasks","Approvals","Expenses","Team workload","Reports"].map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{item}</div>)}</div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Suggested follow-ups</p><div className="mt-3 space-y-2">{["What should I do next?", "Which project needs an owner decision?", "Draft a client update."].map((item) => <button key={item} onClick={() => askPulse(item)} className="block w-full rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:border-[#6D5DFB]/35">{item}</button>)}</div></div></DashboardCard></div></motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Ask Pulse" description="A premium command interface for questions about projects, tasks, approvals, workload, and spend." /><div className="grid gap-4 lg:grid-cols-[1fr_360px]"><DashboardCard title="Command Center Chat" subtitle="Answers are grounded in workspace context"><textarea aria-label="Ask Pulse prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Ask about blockers, workload, approvals, budget, or what to do next..." className="min-h-[130px] w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-lg text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="mt-4 flex flex-wrap gap-2">{askPulsePrompts.map((p) => <button key={p} type="button" onClick={() => askPulse(p)} className={`rounded-full border px-3 py-1.5 text-xs ${prompt === p ? "border-[#6D5DFB]/50 bg-[#6D5DFB]/15 text-white" : "border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)]"}`}>{p}</button>)}</div><div className="mt-4 flex flex-wrap items-center gap-2"><button type="button" onClick={() => askPulse()} disabled={isLoading} className="rounded-lg bg-[#6D5DFB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7C6EFC] disabled:cursor-not-allowed disabled:opacity-60">{isLoading ? "Generating answer..." : "Ask Pulse"}</button><button type="button" onClick={() => navigator.clipboard?.writeText(answer)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs text-[var(--text-secondary)]"><Copy className="mr-1 inline h-3.5 w-3.5" />Copy response</button><StatusBadge label={source === "openrouter" ? "Live AI" : source === "error" ? "Workspace answer" : "Workspace answer"} /></div><motion.div key={answer} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-4 text-sm leading-6 text-[var(--text-secondary)]">{isLoading ? <LoadingSpinner label="Reviewing projects, tasks, approvals, workload, and spend..." /> : answer}</motion.div><div className="mt-4 space-y-3">{history.slice(-4).map((item, index) => <div key={`${item.prompt}-${index}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold text-[var(--text-muted)]">{item.prompt}</p><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.answer}</p></div>)}</div></DashboardCard><DashboardCard title="Context Panel" subtitle="What Ask Pulse can read"><div className="grid gap-2">{["Projects","Tasks","Approvals","Expenses","Team workload","Reports"].map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{item}</div>)}</div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Suggested follow-ups</p><div className="mt-3 space-y-2">{["What should I do next?", "Which project needs an owner decision?", "Draft a client update."].map((item) => <button key={item} onClick={() => askPulse(item)} className="block w-full rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:border-[#6D5DFB]/35">{item}</button>)}</div></div></DashboardCard></div></motion.div>;
 }
 
 export function ReportsScreen() {
@@ -610,7 +794,7 @@ export function SettingsScreen() {
   const toggleSettingAction = usePulseStore((state) => state.toggleSetting);
   const updateSettings = usePulseStore((state) => state.updateSettings);
   const setSelectedTheme = usePulseStore((state) => state.setSelectedTheme);
-  const tabs = ["General", "Members", "Teams", "Roles", "Notifications", "Integrations", "Billing", "Security", "AI Assistant", "Appearance", "Sample Data"];
+  const tabs = ["General", "Members", "Teams", "Roles", "Notifications", "Integrations", "Billing", "Security", "AI Assistant", "Appearance", "Workspace Data"];
   const [ready, setReady] = useState(false);
   const [activeTab, setActiveTab] = useState("General");
   const [settingsNotice, setSettingsNotice] = useState("");
@@ -657,7 +841,7 @@ export function SettingsScreen() {
       <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
         <div role="tablist" aria-label="Settings sections" className="flex gap-2 overflow-x-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 lg:block lg:overflow-visible">
           {tabs.map((tab) => (
-            <button key={tab} type="button" role="tab" aria-selected={activeTab === tab} aria-controls={`settings-panel-${tab.toLowerCase().replaceAll(" ", "-")}`} disabled={!ready} onClick={() => setActiveTab(tab)} className={`shrink-0 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-55 lg:mb-1 lg:block lg:w-full lg:last:mb-0 ${activeTab === tab ? "bg-[var(--accent)] text-white" : "text-[var(--text-muted)] hover:bg-[var(--card-bg)] hover:text-[var(--text-primary)]"}`}>
+            <button key={tab} type="button" role="tab" aria-selected={activeTab === tab} aria-controls={`settings-panel-${tab.toLowerCase().replaceAll(" ", "-")}`} disabled={!ready} onClick={(event) => { setActiveTab(tab); event.currentTarget.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" }); }} className={`shrink-0 scroll-mx-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-55 lg:mb-1 lg:block lg:w-full lg:last:mb-0 ${activeTab === tab ? "bg-[var(--accent)] text-white" : "text-[var(--text-muted)] hover:bg-[var(--card-bg)] hover:text-[var(--text-primary)]"}`}>
               {tab}
             </button>
           ))}
@@ -821,10 +1005,10 @@ export function SettingsScreen() {
             </DashboardCard>
           ) : null}
 
-          {activeTab === "Sample Data" ? (
-            <DashboardCard title="Sample Data" subtitle="Reset the local workspace">
-              <p className="text-sm leading-6 text-[var(--text-secondary)]">Reset all local sample records back to the original workspace state.</p>
-              <button type="button" onClick={() => { resetDemoData(); setSettingsNotice("Sample data reset to the original workspace state."); }} className="mt-4 rounded-lg border border-red-400/30 bg-red-400/[0.08] px-4 py-2 text-sm font-semibold text-red-100 transition hover:border-red-300/50">Reset sample data</button>
+          {activeTab === "Workspace Data" ? (
+            <DashboardCard title="Workspace Data" subtitle="Restore the local workspace">
+              <p className="text-sm leading-6 text-[var(--text-secondary)]">Restore local workspace records back to the original operating state.</p>
+              <button type="button" onClick={() => { resetDemoData(); setSettingsNotice("Workspace data restored to the original operating state."); }} className="mt-4 rounded-lg border border-red-400/30 bg-red-400/[0.08] px-4 py-2 text-sm font-semibold text-red-100 transition hover:border-red-300/50">Restore workspace data</button>
             </DashboardCard>
           ) : null}
         </div>

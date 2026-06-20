@@ -79,7 +79,7 @@ export default function SignupForm() {
           onChange={setName}
         />
         <AuthField
-          label="Email"
+          label="Email address"
           name="email"
           type="email"
           value={email}

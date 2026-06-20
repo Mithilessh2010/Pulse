@@ -2,11 +2,19 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Clock, FileText, Mic, PhoneCall, Upload, Video, Wand2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardCard, EmptyState, MetricPill, PageHeader, ProgressBar, StatusBadge, containerVariants } from "@/components/app-shell/AppUI";
+import { ObjectLink } from "@/components/app-shell/ObjectLink";
+import { callHref, chatRoomHref, decisionHref, meetingHref, memberHref, playbookHref, projectHref, slugify, teamHref } from "@/lib/routes";
 import { usePulseHydrated, usePulseStore, type AutopilotAction } from "@/stores/usePulseStore";
 
 const buttonClass = "rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/40 hover:text-[var(--text-primary)]";
+
+function memberIdFromName(name: string) {
+  const first = name.split(" ")[0]?.toLowerCase() ?? name.toLowerCase();
+  return slugify(first);
+}
 
 export function AutopilotScreen() {
   const autopilotPlans = usePulseStore((state) => state.autopilotPlans);
@@ -36,7 +44,7 @@ export function AutopilotScreen() {
       <PageHeader title="Pulse Autopilot" description="Turn messy manager instructions into organized actions that still wait for confirmation." />
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <DashboardCard title="Manager command" subtitle="Pulse prepares actions, explains why, and never silently runs high-risk work.">
-          <textarea value={command} onChange={(event) => setCommand(event.target.value)} className="min-h-[150px] w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-sm leading-6 text-[var(--text-primary)] outline-none focus:border-[var(--accent)]/60" />
+          <textarea value={command} onChange={(event) => setCommand(event.target.value)} className="min-h-32 max-h-56 w-full resize-y overflow-y-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-sm leading-6 text-[var(--text-primary)] outline-none focus:border-[var(--accent)]/60" />
           <div className="mt-3 flex flex-wrap gap-2">{["Handle today's blockers", "Clear safe approvals", "Reduce overloaded work", "Prepare leadership update", "Plan tomorrow's priorities"].map((chip) => <button key={chip} onClick={() => setCommand(chip)} className={buttonClass}>{chip}</button>)}</div>
           <button onClick={generatePlan} className="mt-4 rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">{loading ? "Generating action plan..." : "Generate action plan"}</button>
         </DashboardCard>
@@ -66,6 +74,8 @@ export function InboxScreen() {
 }
 
 export function ChatScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const chatRooms = usePulseStore((state) => state.chatRooms);
   const sendChatMessage = usePulseStore((state) => state.sendChatMessage);
   const markRoomRead = usePulseStore((state) => state.markRoomRead);
@@ -73,15 +83,30 @@ export function ChatScreen() {
   const convertMessageToTask = usePulseStore((state) => state.convertMessageToTask);
   const pinMessageAsDecision = usePulseStore((state) => state.pinMessageAsDecision);
   const startHuddleFromRoom = usePulseStore((state) => state.startHuddleFromRoom);
-  const [roomId, setRoomId] = useState("website");
+  const queryRoomId = searchParams.get("room");
+  const [roomId, setRoomId] = useState(queryRoomId ?? "website");
   const room = chatRooms.find((item) => item.id === roomId) ?? chatRooms[0];
   const [draft, setDraft] = useState("");
   const [roomNotice, setRoomNotice] = useState("");
   const latestMessage = room?.messages[room.messages.length - 1];
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Work Rooms" description="Team chat tied to projects, decisions, approvals, and context." /> <div className="grid gap-4 lg:grid-cols-[260px_1fr_320px]"><DashboardCard title="Rooms">{chatRooms.map((item) => <button key={item.id} onClick={() => { setRoomId(item.id); setRoomNotice(""); }} className={`mb-2 block w-full rounded-xl border border-[var(--border-subtle)] p-3 text-left text-sm ${room?.id === item.id ? "bg-[var(--card-bg)] text-[var(--text-primary)]" : "bg-[var(--card-bg)] text-[var(--text-secondary)]"}`}>{item.name}<span className="block text-xs text-[var(--text-muted)]">{item.description}</span><span className="mt-2 block text-[11px] text-[var(--accent-2)]">{item.isRead ? "Read" : `${item.unreadCount} unread`}</span></button>)}</DashboardCard>{room ? <DashboardCard title={room.name} subtitle="Work-tied conversation"><div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">{room.messages.map((message) => <div key={message.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{message.sender}</p><p className="mt-1 text-sm text-[var(--text-secondary)]">{message.body}</p><p className="mt-2 text-xs text-[var(--text-muted)]">{message.createdAt}{message.convertedToTaskId ? " · Converted to task" : ""}{message.pinnedAsDecisionId ? " · Pinned decision" : ""}</p></div>)}</div><form onSubmit={(event) => { event.preventDefault(); const sent = sendChatMessage(room.id, draft); if (sent) setRoomNotice("Message saved to this room."); setDraft(""); }} className="mt-4 flex gap-2"><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm text-[var(--text-primary)] outline-none" /><button type="submit" className="rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white">Send</button></form></DashboardCard> : null}{room ? <DashboardCard title="Room Context" subtitle="AI summary, huddle, decisions, and linked work"><p className="text-sm leading-6 text-[var(--text-secondary)]">{room.aiSummary}</p>{roomNotice ? <p className="mt-3 rounded-xl border border-[var(--accent-2)]/20 bg-[var(--card-bg)] p-3 text-xs leading-5 text-[var(--text-secondary)]">{roomNotice}</p> : null}<div className="mt-4 grid gap-2"><button onClick={() => { const callId = startHuddleFromRoom(room.id); setRoomNotice(callId ? "Huddle started and saved. Open Calls to continue." : "Unable to start huddle."); }} className={`${buttonClass} flex items-center justify-center gap-2 bg-[var(--accent)] text-white`}><PhoneCall className="h-3.5 w-3.5" />Start huddle</button><a href="/app/calls" className={`${buttonClass} text-center`}>Open related calls</a><button onClick={() => { summarizeChatRoom(room.id); setRoomNotice("Thread summary saved."); }} className={buttonClass}>Summarize thread</button><button onClick={() => { if (latestMessage) { convertMessageToTask(room.id, latestMessage.id); setRoomNotice("Task created from latest message and saved."); } }} className={buttonClass}>Convert message to task</button><button onClick={() => { if (latestMessage) { pinMessageAsDecision(room.id, latestMessage.id); setRoomNotice("Decision pinned and saved."); } }} className={buttonClass}>Pin decision</button><button onClick={() => { markRoomRead(room.id); setRoomNotice(`${room.name} marked read.`); }} className={buttonClass}>Mark room read</button></div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Pinned decisions</p><p className="mt-2 text-sm text-[var(--text-secondary)]">{room.pinnedDecisionIds.length ? `${room.pinnedDecisionIds.length} decisions pinned from this room.` : "No pinned decisions yet."}</p></div></DashboardCard> : null}</div></motion.div>;
+  useEffect(() => {
+    if (queryRoomId && chatRooms.some((item) => item.id === queryRoomId)) {
+      setRoomId(queryRoomId);
+    }
+  }, [chatRooms, queryRoomId]);
+
+  function selectRoom(nextRoomId: string) {
+    setRoomId(nextRoomId);
+    setRoomNotice("");
+    router.push(chatRoomHref(nextRoomId));
+  }
+
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Work Rooms" description="Team chat tied to projects, decisions, approvals, and context." /> <div className="grid gap-4 lg:grid-cols-[260px_1fr_320px]"><DashboardCard title="Rooms">{chatRooms.map((item) => <button key={item.id} onClick={() => selectRoom(item.id)} className={`mb-2 block w-full rounded-xl border p-3 text-left text-sm ${room?.id === item.id ? "border-[var(--accent)]/55 bg-[var(--card-bg)] text-[var(--text-primary)]" : "border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-secondary)]"}`}>{item.name}<span className="block text-xs text-[var(--text-muted)]">{item.description}</span><span className="mt-2 block text-[11px] text-[var(--accent-2)]">{item.isRead ? "Read" : `${item.unreadCount} unread`}</span></button>)}</DashboardCard>{room ? <DashboardCard title={room.name} subtitle="Work-tied conversation"><div className="mb-3 flex flex-wrap gap-2">{room.linkedProject ? <ObjectLink type="project" id={slugify(room.linkedProject)} label={room.linkedProject} variant="badge" /> : null}{room.linkedTeam ? <ObjectLink type="team" id={slugify(room.linkedTeam)} label={room.linkedTeam} variant="badge" /> : null}</div><div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">{room.messages.map((message) => <div key={message.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><ObjectLink type="member" id={memberIdFromName(message.sender)} label={message.sender} className="text-sm font-semibold" /><p className="mt-1 text-sm text-[var(--text-secondary)]">{message.body}</p><p className="mt-2 text-xs text-[var(--text-muted)]">{message.createdAt}{message.convertedToTaskId ? " · Converted to task" : ""}{message.pinnedAsDecisionId ? " · Pinned decision" : ""}</p></div>)}</div><form onSubmit={(event) => { event.preventDefault(); const sent = sendChatMessage(room.id, draft); if (sent) setRoomNotice("Message saved to this room."); setDraft(""); }} className="mt-4 flex gap-2"><input aria-label={`Write a message in ${room.name}`} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm text-[var(--text-primary)] outline-none" /><button type="submit" className="rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white">Send</button></form></DashboardCard> : null}{room ? <DashboardCard title="Room Context" subtitle="AI summary, huddle, decisions, and linked work"><p className="text-sm leading-6 text-[var(--text-secondary)]">{room.aiSummary}</p>{roomNotice ? <p className="mt-3 rounded-xl border border-[var(--accent-2)]/20 bg-[var(--card-bg)] p-3 text-xs leading-5 text-[var(--text-secondary)]">{roomNotice}</p> : null}<div className="mt-4 grid gap-2"><button onClick={() => { const callId = startHuddleFromRoom(room.id); if (callId) router.push(callHref(callId)); else setRoomNotice("Unable to start huddle."); }} className={`${buttonClass} flex items-center justify-center gap-2 bg-[var(--accent)] text-white`}><PhoneCall className="h-3.5 w-3.5" />Start huddle</button><a href="/app/calls" className={`${buttonClass} text-center`}>Open related calls</a><button onClick={() => { summarizeChatRoom(room.id); setRoomNotice("Thread summary saved."); }} className={buttonClass}>Summarize thread</button><button onClick={() => { if (latestMessage) { convertMessageToTask(room.id, latestMessage.id); setRoomNotice("Task created from latest message and saved."); } }} className={buttonClass}>Convert message to task</button><button onClick={() => { if (latestMessage) { pinMessageAsDecision(room.id, latestMessage.id); setRoomNotice("Decision pinned and saved."); } }} className={buttonClass}>Pin decision</button><button onClick={() => { markRoomRead(room.id); setRoomNotice(`${room.name} marked read.`); }} className={buttonClass}>Mark room read</button></div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Pinned decisions</p><p className="mt-2 text-sm text-[var(--text-secondary)]">{room.pinnedDecisionIds.length ? `${room.pinnedDecisionIds.length} decisions pinned from this room.` : "No pinned decisions yet."}</p></div></DashboardCard> : null}</div></motion.div>;
 }
 
 export function CallsScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const hydrated = usePulseHydrated();
   const calls = usePulseStore((state) => state.calls);
   const startCall = usePulseStore((state) => state.startCall);
@@ -89,11 +114,23 @@ export function CallsScreen() {
   const generateCallAgenda = usePulseStore((state) => state.generateCallAgenda);
   const createCallFollowUpTasks = usePulseStore((state) => state.createCallFollowUpTasks);
   const updateCallNotes = usePulseStore((state) => state.updateCallNotes);
-  const [selectedId, setSelectedId] = useState(calls.find((call) => call.status === "In progress")?.id ?? calls[0]?.id);
+  const queryCallId = searchParams.get("call");
+  const [selectedId, setSelectedId] = useState(queryCallId ?? calls.find((call) => call.status === "In progress")?.id ?? calls[0]?.id);
   const selected = calls.find((call) => call.id === selectedId) ?? calls[0];
   const active = calls.find((call) => call.status === "In progress");
   const suggested = calls.filter((call) => call.status === "Suggested" || call.status === "Scheduled");
   const history = calls.filter((call) => call.status === "Completed");
+
+  useEffect(() => {
+    if (queryCallId && calls.some((call) => call.id === queryCallId)) {
+      setSelectedId(queryCallId);
+    }
+  }, [calls, queryCallId]);
+
+  function selectCall(callId: string) {
+    setSelectedId(callId);
+    router.push(callHref(callId));
+  }
 
   if (!hydrated) {
     return (
@@ -137,23 +174,23 @@ export function CallsScreen() {
           <DashboardCard title="Suggested calls" subtitle="Pulse recommends huddles only when work is blocked or coordination is faster than another comment.">
             <div className="grid gap-3 lg:grid-cols-2">
               {suggested.map((call) => (
-                <button key={call.id} type="button" onClick={() => setSelectedId(call.id)} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-left transition hover:border-[var(--border-strong)]">
+                <div key={call.id} role="button" tabIndex={0} onClick={() => selectCall(call.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") selectCall(call.id); }} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-left transition hover:border-[var(--border-strong)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[var(--text-primary)]">{call.title}</p>
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">{call.relatedProject ?? call.relatedTeam} · {call.duration}</p>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">{call.relatedProject ? <ObjectLink type="project" id={slugify(call.relatedProject)} label={call.relatedProject} onClick={(event) => event.stopPropagation()} /> : call.relatedTeam ? <ObjectLink type="team" id={slugify(call.relatedTeam)} label={call.relatedTeam} onClick={(event) => event.stopPropagation()} /> : null} · {call.duration}</p>
                     </div>
                     <StatusBadge label={call.status} />
                   </div>
                   <p className="mt-3 text-sm leading-5 text-[var(--text-secondary)]">{call.reason}</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">{call.participants.map((person) => <span key={person} className="rounded-md border border-[var(--border-subtle)] px-2 py-1 text-[11px] text-[var(--text-muted)]">{person}</span>)}</div>
-                </button>
+                </div>
               ))}
             </div>
           </DashboardCard>
           <div className="grid gap-4 lg:grid-cols-2">
             <DashboardCard title="Call history" subtitle="Completed huddles and captured outcomes">
-              <div className="space-y-2">{history.length ? history.map((call) => <button key={call.id} type="button" onClick={() => setSelectedId(call.id)} className="block w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left"><p className="text-sm font-semibold text-[var(--text-primary)]">{call.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Ended {call.endedAt ?? "recently"} · {call.actionItemIds.length} action items</p></button>) : <EmptyState title="No completed calls yet" description="Start and end a call to build call history." />}</div>
+              <div className="space-y-2">{history.length ? history.map((call) => <button key={call.id} type="button" onClick={() => selectCall(call.id)} className="block w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left"><p className="text-sm font-semibold text-[var(--text-primary)]">{call.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Ended {call.endedAt ?? "recently"} · {call.actionItemIds.length} action items</p></button>) : <EmptyState title="No completed calls yet" description="Start and end a call to build call history." />}</div>
             </DashboardCard>
             <DashboardCard title="Action items from calls" subtitle="Follow-up tasks created from huddles">
               <div className="space-y-2">{calls.flatMap((call) => call.actionItemIds.map((taskId) => ({ taskId, call }))).slice(0, 5).map(({ taskId, call }) => <div key={taskId} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">{call.title}<span className="block text-xs text-[var(--text-muted)]">{taskId}</span></div>)}{!calls.some((call) => call.actionItemIds.length) ? <EmptyState title="No call action items" description="Create follow-up tasks from a call to populate this panel." /> : null}</div>
@@ -170,13 +207,13 @@ export function CallsScreen() {
                 </div>
                 <StatusBadge label={selected.status} />
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2">{selected.participants.map((person) => <div key={person} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-raised-bg)] p-3 text-center"><div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)] text-xs font-bold text-white">{person.slice(0, 2).toUpperCase()}</div><p className="mt-2 text-xs text-[var(--text-secondary)]">{person}</p></div>)}</div>
+              <div className="mt-4 grid grid-cols-3 gap-2">{selected.participants.map((person) => <ObjectLink key={person} type="member" id={memberIdFromName(person)} label={person} variant="card" className="p-3 text-center"><div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)] text-xs font-bold text-white">{person.slice(0, 2).toUpperCase()}</div><p className="mt-2 text-xs text-[var(--text-secondary)]">{person}</p></ObjectLink>)}</div>
               <div className="mt-4 flex items-center gap-2 text-xs text-[var(--text-muted)]"><Mic className="h-4 w-4" /><Video className="h-4 w-4" /><Clock className="h-4 w-4" /> Workspace room · {selected.status === "In progress" ? "Live now" : selected.startedAt ?? "not started"}</div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => startCall(selected.id)} disabled={selected.status === "In progress"} className={`rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${selected.status === "In progress" ? "cursor-not-allowed bg-[var(--accent)]/45" : "bg-[var(--accent)] hover:brightness-110"}`}>{selected.status === "In progress" ? "Call in progress" : "Start call"}</button><button type="button" onClick={() => endCall(selected.id)} disabled={selected.status !== "In progress"} className={`${buttonClass} ${selected.status !== "In progress" ? "cursor-not-allowed opacity-55" : ""}`}>End call</button><button type="button" onClick={() => generateCallAgenda(selected.id)} className={buttonClass}>Generate agenda</button><button type="button" onClick={() => createCallFollowUpTasks(selected.id)} className={buttonClass}>Create follow-up tasks</button></div>
             <div className="mt-4 space-y-4">
               <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Agenda</p><div className="space-y-2">{(selected.agenda ?? []).map((item) => <div key={item} className="flex gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-sm text-[var(--text-secondary)]"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[var(--accent-2)]" />{item}</div>)}</div></div>
-              <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">AI live notes</p><textarea value={selected.notes.join("\n")} onChange={(event) => updateCallNotes(selected.id, event.target.value.split("\n").filter(Boolean))} className="min-h-[110px] w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-primary)] outline-none" /></div>
+              <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">AI live notes</p><textarea value={selected.notes.join("\n")} onChange={(event) => updateCallNotes(selected.id, event.target.value.split("\n").filter(Boolean))} className="min-h-28 max-h-56 w-full resize-y overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-primary)] outline-none" /></div>
               <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Decisions captured</p><div className="space-y-2">{selected.decisions.length ? selected.decisions.map((decision) => <div key={decision} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-sm text-[var(--text-secondary)]">{decision}</div>) : <p className="text-sm text-[var(--text-muted)]">No decisions captured yet.</p>}</div></div>
             </div>
           </DashboardCard>
@@ -187,38 +224,96 @@ export function CallsScreen() {
 }
 
 export function MeetingsScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const meetings = usePulseStore((state) => state.meetings);
   const generateMeetingAgenda = usePulseStore((state) => state.generateMeetingAgenda);
   const createMeetingFollowUpTasks = usePulseStore((state) => state.createMeetingFollowUpTasks);
   const markMeetingNotesComplete = usePulseStore((state) => state.markMeetingNotesComplete);
+  const queryMeetingId = searchParams.get("meeting");
+  const [selectedMeetingId, setSelectedMeetingId] = useState(queryMeetingId ?? meetings[0]?.id);
   const [meetingNotice, setMeetingNotice] = useState("");
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Meeting Hub" description="Run fewer, better meetings with agendas, decisions, notes, and follow-up tasks." action={<a href="/app/calls" className={buttonClass}>Open Calls & Huddles</a>} /><div className="grid gap-4 lg:grid-cols-2">{meetings.map((meeting) => <DashboardCard key={meeting.id} title={meeting.title} subtitle={`${meeting.project} · ${meeting.duration}`}><p className="text-sm leading-6 text-[var(--text-secondary)]">{meeting.why}</p><div className="mt-3 space-y-2">{(meeting.generatedAgenda ?? meeting.agenda).map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-sm text-[var(--text-secondary)]">{item}</div>)}</div><div className="mt-3 flex flex-wrap gap-2">{meeting.notesComplete ? <StatusBadge label="Notes complete" /> : null}{meeting.followUpTaskIds?.length ? <StatusBadge label={`${meeting.followUpTaskIds.length} follow-up tasks`} /> : null}</div><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => { generateMeetingAgenda(meeting.id); setMeetingNotice(`${meeting.title}: agenda generated and saved.`); }} className={buttonClass}>Generate agenda</button><button onClick={() => { createMeetingFollowUpTasks(meeting.id); setMeetingNotice(`${meeting.title}: follow-up task created and saved.`); }} className={buttonClass}>Create follow-up tasks</button><button onClick={() => { markMeetingNotesComplete(meeting.id); setMeetingNotice(`${meeting.title}: notes marked complete.`); }} className={buttonClass}>Mark notes complete</button></div></DashboardCard>)}</div>{meetingNotice ? <div className="mt-4"><DashboardCard title="Meeting action saved"><p className="text-sm text-[var(--text-secondary)]">{meetingNotice}</p></DashboardCard></div> : null}</motion.div>;
+  useEffect(() => {
+    if (queryMeetingId && meetings.some((meeting) => meeting.id === queryMeetingId)) {
+      setSelectedMeetingId(queryMeetingId);
+    }
+  }, [meetings, queryMeetingId]);
+
+  function selectMeeting(meetingId: string) {
+    setSelectedMeetingId(meetingId);
+    router.push(meetingHref(meetingId));
+  }
+
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Meeting Hub" description="Run fewer, better meetings with agendas, decisions, notes, and follow-up tasks." action={<a href="/app/calls" className={buttonClass}>Open Calls & Huddles</a>} /><div className="grid gap-4 lg:grid-cols-2">{meetings.map((meeting) => <DashboardCard key={meeting.id} title={meeting.title} subtitle={`${meeting.project} · ${meeting.duration}`} className={selectedMeetingId === meeting.id ? "ring-2 ring-[var(--accent)]/35" : ""}><div role="button" tabIndex={0} onClick={() => selectMeeting(meeting.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") selectMeeting(meeting.id); }} className="mb-3 block w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[var(--accent)]/40"><p className="text-sm font-semibold text-[var(--text-primary)]">{meeting.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]"><ObjectLink type="project" id={slugify(meeting.project)} label={meeting.project} onClick={(event) => event.stopPropagation()} /> · {meeting.duration}</p></div><p className="text-sm leading-6 text-[var(--text-secondary)]">{meeting.why}</p><div className="mt-3 flex flex-wrap gap-2">{meeting.participants.map((person) => <ObjectLink key={person} type="member" id={memberIdFromName(person)} label={person} variant="badge" />)}</div><div className="mt-3 space-y-2">{(meeting.generatedAgenda ?? meeting.agenda).map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-sm text-[var(--text-secondary)]">{item}</div>)}</div><div className="mt-3 flex flex-wrap gap-2">{meeting.notesComplete ? <StatusBadge label="Notes complete" /> : null}{meeting.followUpTaskIds?.length ? <StatusBadge label={`${meeting.followUpTaskIds.length} follow-up tasks`} /> : null}</div><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => { generateMeetingAgenda(meeting.id); setMeetingNotice(`${meeting.title}: agenda generated and saved.`); }} className={buttonClass}>Generate agenda</button><button onClick={() => { createMeetingFollowUpTasks(meeting.id); setMeetingNotice(`${meeting.title}: follow-up task created and saved.`); }} className={buttonClass}>Create follow-up tasks</button><button onClick={() => { markMeetingNotesComplete(meeting.id); setMeetingNotice(`${meeting.title}: notes marked complete.`); }} className={buttonClass}>Mark notes complete</button></div></DashboardCard>)}</div>{meetingNotice ? <div className="mt-4"><DashboardCard title="Meeting action saved"><p className="text-sm text-[var(--text-secondary)]">{meetingNotice}</p></DashboardCard></div> : null}</motion.div>;
 }
 
 export function TeamsScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const teams = usePulseStore((state) => state.teams);
   const members = usePulseStore((state) => state.members);
   const invites = usePulseStore((state) => state.invites);
   const createTeam = usePulseStore((state) => state.createTeam);
   const inviteMember = usePulseStore((state) => state.inviteMember);
-  const [selectedId, setSelectedId] = useState(teams[0]?.id);
+  const queryTeamId = searchParams.get("team");
+  const [selectedId, setSelectedId] = useState(queryTeamId ?? teams[0]?.id);
   const selected = teams.find((team) => team.id === selectedId) ?? teams[0];
   const [notice, setNotice] = useState("");
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Teams" description="Enterprise team overview, ownership, workload, and focus areas." action={<div className="flex gap-2"><button onClick={() => { const id = createTeam(); setSelectedId(id); setNotice("Team saved to the workspace."); }} className={buttonClass}>Create Team</button><button onClick={() => { const email = inviteMember(); setNotice(`Invite saved for ${email}.`); }} className={buttonClass}>Invite Member</button></div>} />{notice ? <div className="mb-4 rounded-2xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-4 text-sm text-[var(--text-secondary)]">{notice}</div> : null}<div className="grid gap-4 lg:grid-cols-5"><MetricPill label="Active teams" value={String(teams.length)} /><MetricPill label="Members" value={String(members.length)} /><MetricPill label="Pending invites" value={String(invites.length)} /><MetricPill label="Avg workload" value="61%" /><MetricPill label="Teams needing support" value={String(teams.filter((team) => team.supportNeeded).length)} /></div><div className="mt-4 grid gap-4 lg:grid-cols-3">{teams.map((team) => <DashboardCard key={team.id} title={team.name} subtitle={`Lead ${team.lead}`}><StatusBadge label={team.health} /><p className="mt-3 text-sm text-[var(--text-secondary)]">{team.currentFocus}</p><ProgressBar value={team.workloadAverage} /><button onClick={() => setSelectedId(team.id)} className={`mt-4 ${buttonClass}`}>View details</button></DashboardCard>)}</div>{selected ? <div className="mt-4"><DashboardCard title={`${selected.name} detail`} subtitle="Members, projects, workload, and suggested actions"><p className="text-sm text-[var(--text-secondary)]">Active projects: {selected.activeProjects.join(", ") || "No linked projects yet"}</p><p className="mt-2 text-sm text-[var(--text-secondary)]">Support needed: {selected.supportNeeded ? "Yes" : "No"}</p></DashboardCard></div> : null}</motion.div>;
+  useEffect(() => {
+    if (queryTeamId && teams.some((team) => team.id === queryTeamId)) {
+      setSelectedId(queryTeamId);
+    }
+  }, [queryTeamId, teams]);
+
+  function selectTeam(teamId: string) {
+    setSelectedId(teamId);
+    router.push(teamHref(teamId));
+  }
+
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Teams" description="Enterprise team overview, ownership, workload, and focus areas." action={<div className="flex gap-2"><button onClick={() => { const id = createTeam(); selectTeam(id); setNotice("Team saved to the workspace."); }} className={buttonClass}>Create Team</button><button onClick={() => { const email = inviteMember(); setNotice(`Invite saved for ${email}.`); }} className={buttonClass}>Invite Member</button></div>} />{notice ? <div className="mb-4 rounded-2xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-4 text-sm text-[var(--text-secondary)]">{notice}</div> : null}<div className="grid gap-4 lg:grid-cols-5"><MetricPill label="Active teams" value={String(teams.length)} /><MetricPill label="Members" value={String(members.length)} /><MetricPill label="Pending invites" value={String(invites.length)} /><MetricPill label="Avg workload" value="61%" /><MetricPill label="Teams needing support" value={String(teams.filter((team) => team.supportNeeded).length)} /></div><div className="mt-4 grid gap-4 lg:grid-cols-3">{teams.map((team) => <DashboardCard key={team.id} title={team.name} subtitle={`Lead ${team.lead}`} className={selectedId === team.id ? "ring-2 ring-[var(--accent)]/35" : ""}><StatusBadge label={team.health} /><p className="mt-3 text-sm text-[var(--text-secondary)]">{team.currentFocus}</p><p className="mt-2 text-xs text-[var(--text-muted)]">Lead <ObjectLink type="member" id={memberIdFromName(team.lead)} label={team.lead} /></p><ProgressBar value={team.workloadAverage} /><button onClick={() => selectTeam(team.id)} className={`mt-4 ${buttonClass}`}>View details</button></DashboardCard>)}</div>{selected ? <div className="mt-4"><DashboardCard title={`${selected.name} detail`} subtitle="Members, projects, workload, and suggested actions"><p className="text-sm text-[var(--text-secondary)]">Active projects: {selected.activeProjects.length ? selected.activeProjects.map((project, index) => <span key={project}>{index > 0 ? ", " : ""}<ObjectLink type="project" id={slugify(project)} label={project} /></span>) : "No linked projects yet"}</p><p className="mt-2 text-sm text-[var(--text-secondary)]">Support needed: {selected.supportNeeded ? "Yes" : "No"}</p></DashboardCard></div> : null}</motion.div>;
 }
 
 export function DecisionsScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const decisions = usePulseStore((state) => state.decisions);
   const addDecision = usePulseStore((state) => state.addDecision);
-  const [selectedId, setSelectedId] = useState(decisions[0]?.id);
+  const queryDecisionId = searchParams.get("decision");
+  const [selectedId, setSelectedId] = useState(queryDecisionId ?? decisions[0]?.id);
   const selected = decisions.find((decision) => decision.id === selectedId) ?? decisions[0];
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Decision Log" description="Capture decisions that would otherwise disappear in chat." action={<button onClick={() => { const id = addDecision(); setSelectedId(id); }} className={buttonClass}>Add decision</button>} /><div className="grid gap-4 lg:grid-cols-[1fr_360px]"><div className="space-y-3">{decisions.map((decision) => <button key={decision.id} onClick={() => setSelectedId(decision.id)} className="block w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-left hover:border-[#6D5DFB]/40"><p className="font-semibold">{decision.title}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{decision.project} · {decision.team} · {decision.date}</p></button>)}</div>{selected ? <DashboardCard title="Decision detail" subtitle={selected.status}><p className="text-sm leading-6 text-[var(--text-secondary)]">{selected.summary}</p><p className="mt-3 text-sm text-[var(--text-muted)]">Impact: {selected.impact}</p><p className="mt-1 text-sm text-[var(--text-muted)]">Source: {selected.source}</p></DashboardCard> : null}</div></motion.div>;
+  useEffect(() => {
+    if (queryDecisionId && decisions.some((decision) => decision.id === queryDecisionId)) {
+      setSelectedId(queryDecisionId);
+    }
+  }, [decisions, queryDecisionId]);
+
+  function selectDecision(decisionId: string) {
+    setSelectedId(decisionId);
+    router.push(decisionHref(decisionId));
+  }
+
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Decision Log" description="Capture decisions that would otherwise disappear in chat." action={<button onClick={() => { const id = addDecision(); selectDecision(id); }} className={buttonClass}>Add decision</button>} /><div className="grid gap-4 lg:grid-cols-[1fr_360px]"><div className="space-y-3">{decisions.map((decision) => <button key={decision.id} onClick={() => selectDecision(decision.id)} className={`block w-full rounded-2xl border bg-[var(--card-bg)] p-4 text-left hover:border-[#6D5DFB]/40 ${selected?.id === decision.id ? "border-[var(--accent)]/55" : "border-[var(--border-subtle)]"}`}><p className="font-semibold">{decision.title}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{decision.project} · {decision.team} · {decision.date}</p></button>)}</div>{selected ? <DashboardCard title="Decision detail" subtitle={selected.status}><p className="text-sm leading-6 text-[var(--text-secondary)]">{selected.summary}</p><p className="mt-3 text-sm text-[var(--text-muted)]">Impact: {selected.impact}</p><p className="mt-1 text-sm text-[var(--text-muted)]">Source: {selected.source}</p><div className="mt-4 flex flex-wrap gap-2"><ObjectLink type="project" id={slugify(selected.project)} label={selected.project} variant="badge" /><ObjectLink type="team" id={slugify(selected.team)} label={selected.team} variant="badge" /><ObjectLink type="member" id={memberIdFromName(selected.owner)} label={selected.owner} variant="badge" /></div></DashboardCard> : null}</div></motion.div>;
 }
 
 export function PlaybooksScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const playbooks = usePulseStore((state) => state.playbooks);
+  const queryPlaybookId = searchParams.get("playbook");
+  const [selectedPlaybookId, setSelectedPlaybookId] = useState(queryPlaybookId ?? playbooks[0]?.id);
   const [message, setMessage] = useState("");
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Playbooks" description="Reusable operating workflows for repeated work." action={<button onClick={() => setMessage("Pulse drafted a playbook from the completed Q3 Launch project.")} className={buttonClass}>Generate from project</button>} />{message ? <div className="mb-4"><DashboardCard title="Playbook generated"><p className="text-sm text-[var(--text-secondary)]">{message}</p></DashboardCard></div> : null}<div className="grid gap-4 lg:grid-cols-3">{playbooks.map((playbook) => <DashboardCard key={playbook.id} title={playbook.name} subtitle={`${playbook.ownerRole} · ${playbook.estimatedTime}`}><p className="text-sm text-[var(--text-secondary)]">Required proof: {playbook.requiredProof}</p><div className="mt-3 space-y-2">{playbook.steps.map((step) => <div key={step} className="rounded-lg border border-[var(--border-subtle)] p-2 text-sm text-[var(--text-secondary)]">{step}</div>)}</div><button onClick={() => setMessage(`${playbook.name} is ready to apply to a new project.`)} className={`mt-4 ${buttonClass}`}>Run playbook</button></DashboardCard>)}</div></motion.div>;
+  useEffect(() => {
+    if (queryPlaybookId && playbooks.some((playbook) => playbook.id === queryPlaybookId)) {
+      setSelectedPlaybookId(queryPlaybookId);
+    }
+  }, [playbooks, queryPlaybookId]);
+
+  function selectPlaybook(playbookId: string) {
+    setSelectedPlaybookId(playbookId);
+    router.push(playbookHref(playbookId));
+  }
+
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Playbooks" description="Reusable operating workflows for repeated work." action={<button onClick={() => setMessage("Pulse drafted a playbook from the completed Q3 Launch project.")} className={buttonClass}>Generate from project</button>} />{message ? <div className="mb-4"><DashboardCard title="Playbook generated"><p className="text-sm text-[var(--text-secondary)]">{message}</p></DashboardCard></div> : null}<div className="grid gap-4 lg:grid-cols-3">{playbooks.map((playbook) => <DashboardCard key={playbook.id} title={playbook.name} subtitle={`${playbook.ownerRole} · ${playbook.estimatedTime}`} className={selectedPlaybookId === playbook.id ? "ring-2 ring-[var(--accent)]/35" : ""}><button type="button" onClick={() => selectPlaybook(playbook.id)} className="mb-3 block w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40">{playbook.name}</button><p className="text-sm text-[var(--text-secondary)]">Required proof: {playbook.requiredProof}</p><div className="mt-3 space-y-2">{playbook.steps.map((step) => <div key={step} className="rounded-lg border border-[var(--border-subtle)] p-2 text-sm text-[var(--text-secondary)]">{step}</div>)}</div><button onClick={() => { selectPlaybook(playbook.id); setMessage(`${playbook.name} is ready to apply to a new project.`); }} className={`mt-4 ${buttonClass}`}>Run playbook</button></DashboardCard>)}</div></motion.div>;
 }
 
 export function ImportScreen() {
@@ -237,7 +332,7 @@ export function ImportScreen() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
           <DashboardCard title="Source update" subtitle="Paste project notes, meeting notes, client updates, or task lists">
-            <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste project update, meeting notes, or task list..." className="min-h-[220px] w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]/60" />
+            <textarea aria-label="Source update text" value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste project update, meeting notes, or task list..." className="min-h-32 max-h-56 w-full resize-y overflow-y-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]/60 sm:min-h-48" />
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">
                 {["Tasks", "Blockers", "Approvals", "Decisions"].map((item) => <span key={item} className="rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)]">{item}</span>)}

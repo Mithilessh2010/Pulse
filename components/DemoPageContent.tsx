@@ -107,7 +107,7 @@ export default function DemoPageContent() {
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-20 md:px-10">
         <div className="grid gap-3 md:grid-cols-5">
           {demoSteps.map(({ title, text, Icon }) => (
-            <motion.div key={title} variants={itemVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="glass-raised rounded-2xl p-4">
+            <motion.div key={title} variants={itemVariants} initial="hidden" animate="visible" className="glass-raised rounded-2xl p-4">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-[#8B7FFF]">
                 <Icon className="h-5 w-5" />
               </div>

@@ -135,8 +135,7 @@ function SectionHeader({
     <motion.div
       variants={containerVariants}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
+      animate="visible"
       className="mx-auto mb-10 max-w-3xl text-center"
     >
       {eyebrow ? (
@@ -202,8 +201,7 @@ function FeatureMockShell({
     <motion.section
       variants={containerVariants}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-100px" }}
+      animate="visible"
       className={`grid gap-8 py-16 lg:grid-cols-2 lg:items-center ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}
     >
       <motion.div variants={itemVariants}>
@@ -244,7 +242,7 @@ export default function FeaturesPageContent() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 mx-auto grid min-h-screen w-full max-w-7xl gap-10 px-6 pb-16 pt-28 md:px-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center"
+        className="relative z-10 mx-auto grid min-h-[720px] w-full max-w-7xl gap-10 px-6 pb-16 pt-28 md:px-10 lg:min-h-screen lg:grid-cols-[0.9fr_1.1fr] lg:items-center"
       >
         <div>
           <motion.p variants={itemVariants} className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#00B4D8]">
@@ -298,8 +296,7 @@ export default function FeaturesPageContent() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
+          animate="visible"
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
         >
           {featureCards.map(({ title, description, label, Icon }) => (
@@ -398,7 +395,7 @@ export default function FeaturesPageContent() {
           reverse
           title="Keep spend connected to the work."
           description="Pulse connects expenses to projects, approvals, and budgets so teams know where money is going before it becomes a surprise."
-          benefits={["Project-based budgets", "Expense approval queue", "Export-ready reporting later"]}
+          benefits={["Project-based budgets", "Expense approval queue", "Export-ready reporting"]}
         >
           <div className="rounded-[20px] border border-white/[0.06] bg-[#07090F]/45 p-4">
             <div className="mb-4 flex items-end justify-between">
@@ -449,8 +446,7 @@ export default function FeaturesPageContent() {
         <motion.div
           variants={itemVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
+          animate="visible"
           className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.035] backdrop-blur-xl"
         >
           <div className="grid min-w-[720px] grid-cols-[1fr_1.1fr_1.25fr] border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#4D5E78]">
@@ -478,8 +474,7 @@ export default function FeaturesPageContent() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
+          animate="visible"
           className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
         >
           {integrations.map((integration) => (

@@ -29,11 +29,11 @@ export function DashboardCard({
     <motion.section
       variants={cardVariants}
       whileHover={{ y: -3, borderColor: "rgba(255,255,255,0.13)" }}
-      className={`glass-raised rounded-2xl p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)] ${className}`}
+      className={`glass-raised min-w-0 overflow-hidden rounded-2xl p-4 shadow-[0_18px_50px_rgba(0,0,0,0.18)] ${className}`}
     >
       <div className="mb-4">
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">{title}</h2>
-        {subtitle ? <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{subtitle}</p> : null}
+        <h2 className="break-words text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">{title}</h2>
+        {subtitle ? <p className="mt-1 break-words text-xs leading-5 text-[var(--text-muted)]">{subtitle}</p> : null}
       </div>
       {children}
     </motion.section>
@@ -46,9 +46,9 @@ export function StatusBadge({ label }: { label: string }) {
   const color = risk ? "#F87171" : review ? "#FBBF24" : label.includes("Available") || label.includes("Approved") || label.includes("Completed") || label.includes("Low") ? "#00B4D8" : "#4ADE80";
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
+    <span className="inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
       <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} animate={{ opacity: [0.45, 1, 0.45] }} transition={{ duration: 1.8, repeat: Infinity }} />
-      {label}
+      <span className="min-w-0">{label}</span>
     </span>
   );
 }
@@ -67,9 +67,9 @@ export function ProgressBar({ value, color = "#6D5DFB" }: { value: number; color
 
 export function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
-      <p className="text-xl font-semibold text-[var(--text-primary)]">{value}</p>
-      <p className="mt-1 text-xs text-[var(--text-muted)]">{label}</p>
+    <div className="min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
+      <p className="break-words text-xl font-semibold text-[var(--text-primary)]">{value}</p>
+      <p className="mt-1 break-words text-xs text-[var(--text-muted)]">{label}</p>
     </div>
   );
 }
@@ -87,7 +87,7 @@ export function TooltipInfo({ text }: { text: string }) {
   return (
     <span className="group relative inline-flex">
       <Info className="h-4 w-4 text-[var(--text-muted)]" />
-      <span className="pointer-events-none absolute left-1/2 top-6 z-20 w-64 -translate-x-1/2 rounded-xl border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-3 text-xs leading-5 text-[var(--text-secondary)] opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
+      <span className="pointer-events-none fixed left-4 right-4 top-24 z-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-3 text-xs leading-5 text-[var(--text-secondary)] opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100 sm:absolute sm:left-1/2 sm:right-auto sm:top-6 sm:w-64 sm:-translate-x-1/2">
         {text}
       </span>
     </span>
@@ -96,10 +96,10 @@ export function TooltipInfo({ text }: { text: string }) {
 
 export function PageHeader({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div>
+    <div className="mb-6 flex min-w-0 flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="min-w-0">
         <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--text-primary)]">{title}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">{description}</p>
+        <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-[var(--text-muted)]">{description}</p>
       </div>
       {action}
     </div>

@@ -43,7 +43,11 @@ export default function AuthShell({
       />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl flex-col">
-        <Link href="/" className="flex w-fit items-center gap-3">
+        <Link
+          href="/"
+          aria-label="Pulse home"
+          className="flex w-fit items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6D5DFB]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090F]"
+        >
           <PulseLogo />
           <span className="text-[15px] font-semibold tracking-[-0.02em] text-white">
             Pulse

@@ -27,12 +27,16 @@ export default function Navbar() {
       transition={{ duration: 0.4 }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 select-none transition duration-200 hover:opacity-90">
+      <a
+        href="/"
+        className="flex items-center gap-3 rounded-xl select-none transition duration-200 hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6D5DFB]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090F]"
+        aria-label="Pulse home"
+      >
         <PulseLogo />
         <span className="text-[15px] font-semibold tracking-[-0.02em] text-white">
           Pulse
         </span>
-      </div>
+      </a>
 
       {/* Desktop Nav */}
       <div className="hidden md:flex items-center gap-7">
@@ -40,7 +44,7 @@ export default function Navbar() {
           <a
             key={link.label}
             href={link.href}
-            className="text-[13px] font-medium transition-colors duration-150"
+            className="rounded-md px-1.5 py-1 text-[13px] font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6D5DFB]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090F]"
             style={{ color: "#4D5E78" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#C8D0E8")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#4D5E78")}
@@ -54,7 +58,7 @@ export default function Navbar() {
       <div className="hidden md:flex items-center gap-2">
         <a
           href="/signin"
-          className="text-[13px] font-medium px-3.5 py-1.5 rounded-md transition-colors"
+          className="rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6D5DFB]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090F]"
           style={{ color: "#4D5E78" }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#C8D0E8")}
           onMouseLeave={(e) => (e.currentTarget.style.color = "#4D5E78")}
@@ -63,7 +67,7 @@ export default function Navbar() {
         </a>
         <motion.a
           href="/signup"
-          className="text-[13px] font-semibold px-4 py-1.5 rounded-md text-white"
+          className="rounded-md px-4 py-1.5 text-[13px] font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9B92FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090F]"
           style={{ background: "#6D5DFB" }}
           whileHover={{ background: "#7C6EFC", scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
@@ -74,7 +78,11 @@ export default function Navbar() {
 
       {/* Mobile Burger */}
       <button
-        className="md:hidden flex flex-col gap-1.5 p-2"
+        className="flex flex-col gap-1.5 rounded-lg p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6D5DFB]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090F] md:hidden"
+        type="button"
+        aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={mobileOpen}
+        aria-controls="mobile-navigation"
         onClick={() => setMobileOpen(!mobileOpen)}
       >
         <span className="w-5 h-0.5 bg-white/40 rounded" />
@@ -84,24 +92,25 @@ export default function Navbar() {
 
       {mobileOpen && (
         <motion.div
+          id="mobile-navigation"
           className="absolute top-full left-0 right-0 flex flex-col gap-1 p-3 md:hidden"
           style={{ background: "rgba(7,9,15,0.98)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
         >
           {navLinks.map((link) => (
-            <a key={link.label} href={link.href} className="text-sm font-medium py-2 px-3 rounded-md" style={{ color: "#6B7A9F" }}>
+            <a key={link.label} href={link.href} className="rounded-md px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6D5DFB]/60" style={{ color: "#6B7A9F" }}>
               {link.label}
             </a>
           ))}
           <a
             href="/signin"
-            className="text-sm font-medium py-2 px-3 rounded-md text-center"
+            className="rounded-md px-3 py-2 text-center text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6D5DFB]/60"
             style={{ color: "#C8D0E8", border: "1px solid rgba(255,255,255,0.08)" }}
           >
             Sign in
           </a>
-          <a href="/signup" className="text-sm font-semibold px-4 py-2.5 rounded-md text-white text-center mt-1" style={{ background: "#6D5DFB" }}>
+          <a href="/signup" className="mt-1 rounded-md px-4 py-2.5 text-center text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9B92FF]" style={{ background: "#6D5DFB" }}>
             Request access
           </a>
         </motion.div>

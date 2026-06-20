@@ -155,8 +155,7 @@ export default function ProductPageContent() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
+          animate="visible"
           className="grid gap-3 md:grid-cols-2 lg:grid-cols-3"
         >
           {productPillars.map(({ title, description, Icon }) => (

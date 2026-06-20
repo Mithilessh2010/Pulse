@@ -60,7 +60,7 @@ export default function SigninForm() {
       />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthField
-          label="Email"
+          label="Email address"
           name="email"
           type="email"
           value={email}

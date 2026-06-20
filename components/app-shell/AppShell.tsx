@@ -35,6 +35,8 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { PulseLogo } from "@/components/PulseLogo";
+import { ManagerControlBar } from "@/components/app/ManagerControlBar";
+import { Modal } from "@/components/app/Modal";
 import { askPulseResponses } from "@/lib/mockData";
 import { usePulseStore } from "@/stores/usePulseStore";
 
@@ -123,12 +125,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [floatingOpen, setFloatingOpen] = useState(false);
   const [modalKind, setModalKind] = useState<ModalKind | null>(null);
+  const [createName, setCreateName] = useState("");
+  const [createNotes, setCreateNotes] = useState("");
   const themeId = usePulseStore((state) => state.selectedTheme);
   const setSelectedTheme = usePulseStore((state) => state.setSelectedTheme);
   const notifications = usePulseStore((state) => state.notifications);
   const enterprise = usePulseStore((state) => state.enterprise);
   const markNotificationRead = usePulseStore((state) => state.markNotificationRead);
   const markAllNotificationsRead = usePulseStore((state) => state.markAllNotificationsRead);
+  const clearNotifications = usePulseStore((state) => state.clearNotifications);
   const createProject = usePulseStore((state) => state.createProject);
   const createTask = usePulseStore((state) => state.createTask);
   const inviteMember = usePulseStore((state) => state.inviteMember);
@@ -208,16 +213,21 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   function openCreate(kind: ModalKind) {
     setModalKind(kind);
+    setCreateName("");
+    setCreateNotes("");
     setCreateOpen(false);
   }
 
   function saveCreateDraft() {
-    if (modalKind === "Create Project") createProject();
-    if (modalKind === "Create Task") createTask({ title: "New workspace task" });
-    if (modalKind === "Invite Member") inviteMember();
-    if (modalKind === "Create Team") createTeam();
-    if (modalKind === "Submit Expense") submitExpense();
-    if (modalKind === "Generate Report") generateReport();
+    const name = createName.trim();
+    const notes = createNotes.trim();
+
+    if (modalKind === "Create Project") createProject({ name: name || "New workspace project", insight: notes || "Created from the Pulse command center." });
+    if (modalKind === "Create Task") createTask({ title: name || "New workspace task", aiReview: notes || "Created from the Pulse command center." });
+    if (modalKind === "Invite Member") inviteMember({ email: name.includes("@") ? name : undefined, team: notes || undefined });
+    if (modalKind === "Create Team") createTeam({ name: name || "New Workspace Team", currentFocus: notes || "Workspace setup" });
+    if (modalKind === "Submit Expense") submitExpense({ item: name || "Workspace expense", aiCategorySuggestion: notes || "Operations" });
+    if (modalKind === "Generate Report") generateReport(name || "Workspace Report", notes || "Executive");
     setModalKind(null);
   }
 
@@ -286,7 +296,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden text-[var(--pulse-text)] transition-colors duration-300"
+      className="pulse-app relative min-h-screen overflow-x-hidden text-[var(--pulse-text)] transition-colors duration-300"
       style={{
         "--pulse-bg": theme.bg,
         "--app-bg": theme.bg,
@@ -311,8 +321,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     >
       <div className="absolute inset-0 grid-bg opacity-20" />
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 52% 34% at 12% 8%, ${theme.accent}24, transparent 70%), radial-gradient(ellipse 42% 30% at 88% 16%, rgba(0,180,216,0.08), transparent 70%)` }} />
-      <div className="relative z-10 flex">
-        <aside className="hidden h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl lg:sticky lg:top-0 lg:flex">
+      <div className="relative z-10 flex min-h-screen min-w-0">
+        <aside className="hidden h-screen h-dvh w-[280px] shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl lg:sticky lg:top-0 lg:flex">
           {SidebarHeader}
           {SidebarNav}
           {SidebarFooter}
@@ -320,7 +330,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {mobileOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <button aria-label="Close sidebar overlay" className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} className="relative flex h-full w-[300px] flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl">
+            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} className="relative flex h-full w-[min(300px,calc(100vw-24px))] flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl">
               <button aria-label="Close sidebar" onClick={() => setMobileOpen(false)} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)]">
                 <X className="h-4 w-4" />
               </button>
@@ -331,66 +341,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--app-bg)]/82 px-4 py-4 backdrop-blur-xl md:px-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: theme.accent }}>
-                  <button aria-label="Open sidebar" onClick={() => setMobileOpen(true)} className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] lg:hidden">
-                    <Menu className="h-4 w-4" />
-                  </button>
-                  <Command className="h-3.5 w-3.5" />
-                  Pulse
-                  <span className="rounded-md border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">Cmd K</span>
-                </p>
-                <h1 className="text-2xl font-bold tracking-[-0.02em] md:text-3xl">{meta.title}</h1>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">{meta.subtitle}</p>
-              </div>
-              <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                <form onSubmit={submitCommand} className="relative block md:w-[360px]">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-                  <input value={command} onChange={(event) => setCommand(event.target.value)} placeholder="Ask Pulse or search workspace..." className="h-10 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/70 focus:bg-[var(--card-raised-bg)]" />
-                </form>
-                <div className="relative flex items-center gap-2">
-                  <button aria-label="Open notifications" onClick={() => setNotificationOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)] transition hover:text-[var(--pulse-text)]">
-                    <Bell className="h-4 w-4" />
-                    {notifications.some((n) => n.unread) ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#00B4D8]" /> : null}
-                  </button>
-                  <button aria-label="Cycle theme" onClick={cycleTheme} className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)] transition hover:text-[var(--pulse-text)]">
-                    {themeId === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  </button>
-                  <div className="relative">
-                    <button onClick={() => setCreateOpen((open) => !open)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--pulse-accent)] px-4 text-[13px] font-semibold text-white">
-                      <Plus className="h-4 w-4" />
-                      Create
-                    </button>
-                    <AnimatePresence>
-                      {createOpen ? (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-2 shadow-2xl">
-                          {(["Create Project", "Create Task", "Invite Member", "Create Team", "Submit Expense", "Generate Report"] as ModalKind[]).map((item) => (
-                            <button key={item} onClick={() => openCreate(item)} className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]">{item}</button>
-                          ))}
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.06] text-sm font-semibold ring-1 ring-white/10">M</div>
-                </div>
-              </div>
-            </div>
-          </header>
-          <div className="p-4 pb-24 md:p-6 md:pb-28">{children}</div>
+          <ManagerControlBar onOpenSidebar={() => setMobileOpen(true)} onOpenPalette={() => setPaletteOpen(true)} />
+          <div className="min-w-0 p-4 pb-24 md:p-6 md:pb-28">{children}</div>
         </div>
       </div>
 
       <AnimatePresence>
         {paletteOpen ? (
-          <motion.div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/55 px-4 pt-[12vh] backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 12 }} className="w-full max-w-2xl rounded-[24px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-3 shadow-2xl">
+          <motion.div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/55 px-3 py-6 pt-[max(24px,8vh)] backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 12 }} className="max-h-[calc(100dvh-48px)] w-full max-w-2xl overflow-hidden rounded-[24px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-3 shadow-2xl">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-                <input autoFocus value={paletteQuery} onChange={(event) => setPaletteQuery(event.target.value)} placeholder="Search pages, create actions, ask Pulse..." className="h-12 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-11 pr-4 text-sm outline-none focus:border-[var(--pulse-accent)]/60" />
+                <input autoFocus aria-label="Search pages, create actions, or ask Pulse" value={paletteQuery} onChange={(event) => setPaletteQuery(event.target.value)} placeholder="Search pages, create actions, ask Pulse..." className="h-12 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-11 pr-4 text-sm outline-none focus:border-[var(--pulse-accent)]/60" />
               </div>
-              <div className="mt-3 max-h-[420px] overflow-y-auto">
+              <div className="mt-3 max-h-[min(420px,calc(100dvh-140px))] overflow-y-auto">
                 {filteredPalette.length ? filteredPalette.map(({ label, action, Icon }) => (
                   <button key={label} onClick={() => { action(); setPaletteOpen(false); }} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]">
                     <Icon className="h-4 w-4" />
@@ -405,17 +369,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <AnimatePresence>
         {notificationOpen ? (
-          <motion.aside initial={{ x: 420 }} animate={{ x: 0 }} exit={{ x: 420 }} className="fixed right-0 top-0 z-[70] h-full w-full max-w-[400px] border-l border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-5 shadow-2xl backdrop-blur-xl">
-            <div className="mb-5 flex items-center justify-between">
+          <motion.aside initial={{ x: 420 }} animate={{ x: 0 }} exit={{ x: 420 }} className="fixed right-0 top-0 z-[70] flex h-dvh w-full max-w-[400px] flex-col overflow-hidden border-l border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 shadow-2xl backdrop-blur-xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] p-5">
               <div>
                 <h2 className="text-lg font-semibold">Notifications</h2>
                 <p className="text-sm text-[var(--text-muted)]">Signals that need manager attention.</p>
               </div>
               <button aria-label="Close notifications" onClick={() => setNotificationOpen(false)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button>
             </div>
-            <button onClick={markAllNotificationsRead} className="mb-3 rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Mark all read</button>
-            <div className="space-y-2">
-              {notifications.map((item) => (
+            <div className="flex shrink-0 flex-wrap gap-2 px-5 pt-5">
+              <button type="button" onClick={markAllNotificationsRead} className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Mark all read</button>
+              <button type="button" onClick={clearNotifications} className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Clear</button>
+            </div>
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5">
+              {notifications.length ? notifications.map((item) => (
                 <div key={item.id} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{item.description}</p></div>
@@ -423,37 +390,26 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-muted)]"><span>{item.time}</span><button onClick={() => markNotificationRead(item.id)} className="text-[var(--text-secondary)]">{item.action}</button></div>
                 </div>
-              ))}
+              )) : <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-5 text-sm text-[var(--text-muted)]">Notification center is clear.</div>}
             </div>
           </motion.aside>
         ) : null}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {modalKind ? (
-          <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} className="w-full max-w-lg rounded-[24px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-5 shadow-2xl">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div><h2 className="text-lg font-semibold">{modalKind}</h2><p className="mt-1 text-sm text-[var(--text-muted)]">Create a workspace draft and review it before sharing with the team.</p></div>
-                <button aria-label="Close modal" onClick={() => setModalKind(null)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button>
+      <Modal open={Boolean(modalKind)} onClose={() => setModalKind(null)} title={modalKind ?? "Create"} description="Create a workspace draft and review it before sharing with the team." footer={<button onClick={saveCreateDraft} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--pulse-accent)] px-4 py-3 text-sm font-semibold text-white sm:ml-auto sm:w-auto"><CheckCircle2 className="h-4 w-4" />Save draft</button>}>
+              <div className="space-y-4">
+                <label className="block text-sm text-[var(--text-secondary)]">Name<input value={createName} onChange={(event) => setCreateName(event.target.value)} className="mt-2 h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 outline-none focus:border-[var(--pulse-accent)]/60" placeholder={`${modalKind} name`} /></label>
+                <label className="block text-sm text-[var(--text-secondary)]">Notes<textarea value={createNotes} onChange={(event) => setCreateNotes(event.target.value)} className="mt-2 min-h-32 max-h-56 w-full resize-y overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 outline-none focus:border-[var(--pulse-accent)]/60" placeholder="Add context..." /></label>
               </div>
-              <div className="space-y-3">
-                <label className="block text-sm text-[var(--text-secondary)]">Name<input className="mt-2 h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 outline-none focus:border-[var(--pulse-accent)]/60" placeholder={`${modalKind} name`} /></label>
-                <label className="block text-sm text-[var(--text-secondary)]">Notes<textarea className="mt-2 min-h-[92px] w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 outline-none focus:border-[var(--pulse-accent)]/60" placeholder="Add context..." /></label>
-                <button onClick={saveCreateDraft} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--pulse-accent)] px-4 py-3 text-sm font-semibold text-white"><CheckCircle2 className="h-4 w-4" />Save draft</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      </Modal>
 
-      <div className="fixed bottom-5 right-5 z-40">
+      <div className="fixed bottom-3 right-3 z-40 sm:bottom-5 sm:right-5">
         <AnimatePresence>
           {floatingOpen ? (
             <motion.div initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} className="mb-3 w-[min(360px,calc(100vw-40px))] rounded-[22px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-4 shadow-2xl backdrop-blur-xl">
               <div className="mb-3 flex items-center justify-between"><p className="text-sm font-semibold">Ask Pulse</p><button onClick={() => setFloatingOpen(false)} className="text-[var(--text-muted)]"><X className="h-4 w-4" /></button></div>
               <div className="flex flex-wrap gap-2">{["What needs attention?", "Who needs support?", "What is blocked?", "Write update"].map((chip) => <button key={chip} onClick={() => askMini(chip)} className="rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--pulse-text)]">{chip}</button>)}</div>
-              <form onSubmit={(event) => { event.preventDefault(); askMini(); }} className="mt-3 flex gap-2"><input value={miniPrompt} onChange={(event) => setMiniPrompt(event.target.value)} placeholder="Ask Pulse..." className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm outline-none" /><button type="submit" className="rounded-xl bg-[var(--pulse-accent)] px-3 text-sm font-semibold text-white">Ask</button></form>
+              <form onSubmit={(event) => { event.preventDefault(); askMini(); }} className="mt-3 flex gap-2"><input aria-label="Ask Pulse in this modal" value={miniPrompt} onChange={(event) => setMiniPrompt(event.target.value)} placeholder="Ask Pulse..." className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm outline-none" /><button type="submit" className="rounded-xl bg-[var(--pulse-accent)] px-3 text-sm font-semibold text-white">Ask</button></form>
               <p className="mt-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-xs leading-5 text-[var(--text-secondary)]">{miniAnswer}</p>
             </motion.div>
           ) : null}

@@ -24,25 +24,40 @@ export default function VerifyForm({ email }: VerifyFormProps) {
     event.preventDefault();
     setError("");
     setSuccess("");
-    setLoading(true);
 
-    const response = await fetch("/api/auth/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: safeEmail, code }),
-    });
-    const data = await response.json();
-
-    setLoading(false);
-
-    if (!response.ok) {
-      setError(data.error || "Unable to verify account.");
+    if (!safeEmail) {
+      setError("Open the verification link from your email, or return to sign in.");
       return;
     }
 
-    setSuccess("Email verified. Opening your workspace.");
-    router.push(data.redirectTo);
-    router.refresh();
+    if (!/^\d{6}$/.test(code)) {
+      setError("Enter the 6-digit verification code.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: safeEmail, code }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Unable to verify account.");
+        return;
+      }
+
+      setSuccess("Email verified. Opening your workspace.");
+      router.push(data.redirectTo);
+      router.refresh();
+    } catch {
+      setError("Unable to verify account. Try again in a moment.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function resendCode() {
@@ -50,26 +65,30 @@ export default function VerifyForm({ email }: VerifyFormProps) {
     setSuccess("");
     setResending(true);
 
-    const response = await fetch("/api/auth/resend-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: safeEmail }),
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/api/auth/resend-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: safeEmail }),
+      });
+      const data = await response.json();
 
-    setResending(false);
+      if (!response.ok) {
+        setError(data.error || "Unable to request a new code.");
+        return;
+      }
 
-    if (!response.ok) {
-      setError(data.error || "Unable to request a new code.");
-      return;
+      if (data.redirectTo) {
+        router.push(data.redirectTo);
+        return;
+      }
+
+      setSuccess(data.message || "A new code was generated.");
+    } catch {
+      setError("Unable to request a new code. Try again in a moment.");
+    } finally {
+      setResending(false);
     }
-
-    if (data.redirectTo) {
-      router.push(data.redirectTo);
-      return;
-    }
-
-    setSuccess(data.message || "A new code was generated.");
   }
 
   return (

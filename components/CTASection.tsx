@@ -22,8 +22,7 @@ export default function CTASection() {
       <div className="relative max-w-[780px] mx-auto px-6 md:px-10 text-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="flex flex-col items-center gap-7"
         >

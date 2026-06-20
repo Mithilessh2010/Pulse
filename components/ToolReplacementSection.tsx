@@ -29,8 +29,7 @@ export default function ToolReplacementSection() {
         <motion.div
           className="mb-16"
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: "#4D5E78" }}>
@@ -110,8 +109,7 @@ export default function ToolReplacementSection() {
               className="absolute"
               style={{ top: cardPositions[i].top, left: cardPositions[i].left }}
               initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.45, delay: i * 0.07, ease: "easeOut" }}
             >
               <motion.div
@@ -144,8 +142,7 @@ export default function ToolReplacementSection() {
             className="absolute z-20 flex flex-col items-center gap-3"
             style={{ right: "4%", top: "50%", transform: "translateY(-50%)" }}
             initial={{ opacity: 0, scale: 0.7 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.5, ease: "easeOut" }}
           >
             {/* Pulse rings */}

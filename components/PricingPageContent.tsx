@@ -161,8 +161,7 @@ function SectionHeader({ title, description }: { title: string; description?: st
     <motion.div
       variants={containerVariants}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
+      animate="visible"
       className="mx-auto mb-10 max-w-3xl text-center"
     >
       <motion.h2 variants={itemVariants} className="text-3xl font-bold tracking-[-0.02em] text-[#F0F2F8] md:text-5xl">
@@ -208,7 +207,7 @@ export default function PricingPageContent() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 mx-auto flex min-h-[76vh] max-w-5xl flex-col items-center justify-center px-6 pb-12 pt-28 text-center md:px-10"
+        className="relative z-10 mx-auto flex min-h-[620px] max-w-5xl flex-col items-center justify-center px-6 pb-12 pt-28 text-center md:min-h-[76vh] md:px-10"
       >
         <motion.div
           aria-hidden="true"
@@ -246,11 +245,12 @@ export default function PricingPageContent() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:px-10">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.035] p-1">
+          <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.035] p-1" role="group" aria-label="Billing cycle">
             {(["monthly", "yearly"] as const).map((cycle) => (
               <button
                 key={cycle}
                 type="button"
+                aria-pressed={billingCycle === cycle}
                 onClick={() => setBillingCycle(cycle)}
                 className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
                   billingCycle === cycle ? "bg-[#6D5DFB] text-white" : "text-[#6B7A9F] hover:text-[#C8D0E8]"
@@ -270,8 +270,7 @@ export default function PricingPageContent() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
+          animate="visible"
           className="grid gap-4 lg:grid-cols-4"
         >
           {plans.map((plan) => (
@@ -326,7 +325,7 @@ export default function PricingPageContent() {
           description="A clear way to compare tool sprawl with a single command center."
         />
         <div className="grid gap-4 lg:grid-cols-2">
-          <motion.div variants={itemVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="glass-raised rounded-[24px] p-5">
+          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="glass-raised rounded-[24px] p-5">
             <h3 className="text-lg font-semibold text-[#F0F2F8]">Typical stack</h3>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {toolCosts.map(([tool, cost]) => (
@@ -341,7 +340,7 @@ export default function PricingPageContent() {
             </p>
           </motion.div>
 
-          <motion.div variants={itemVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="glass-raised rounded-[24px] border-[#6D5DFB]/35 bg-[linear-gradient(145deg,rgba(109,93,251,0.18),rgba(0,180,216,0.06))] p-5">
+          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="glass-raised rounded-[24px] border-[#6D5DFB]/35 bg-[linear-gradient(145deg,rgba(109,93,251,0.18),rgba(0,180,216,0.06))] p-5">
             <h3 className="text-lg font-semibold text-[#F0F2F8]">Pulse Team</h3>
             <div className="mt-5 rounded-2xl border border-white/10 bg-[#07090F]/40 p-5">
               <p className="text-5xl font-semibold tracking-[-0.04em] text-white">$25</p>
@@ -396,7 +395,7 @@ export default function PricingPageContent() {
         <SectionHeader title="Pricing questions" />
         <div className="grid gap-3 md:grid-cols-2">
           {faqs.map(([question, answer]) => (
-            <motion.div key={question} variants={itemVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="glass-raised rounded-2xl p-5">
+            <motion.div key={question} variants={itemVariants} initial="hidden" animate="visible" className="glass-raised rounded-2xl p-5">
               <div className="mb-3 flex items-center gap-3">
                 <HelpCircle className="h-5 w-5 text-[#8B7FFF]" />
                 <h3 className="text-base font-semibold text-[#F0F2F8]">{question}</h3>

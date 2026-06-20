@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { normalizeEmail, isValidEmail, setSessionCookie } from "@/lib/auth";
 import { getUsersCollection, getVerificationCodesCollection } from "@/lib/mongodb";
+import { readJsonObject } from "@/lib/request";
 import { compareVerificationCode } from "@/lib/verification";
 
 export const runtime = "nodejs";
@@ -10,7 +11,12 @@ const MAX_ATTEMPTS = 5;
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await readJsonObject(request);
+
+    if (!body) {
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    }
+
     const email = normalizeEmail(typeof body.email === "string" ? body.email : "");
     const code = typeof body.code === "string" ? body.code.trim() : "";
 

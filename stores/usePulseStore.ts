@@ -44,6 +44,7 @@ type Meeting = (typeof seedMeetings)[number] & {
 type Decision = (typeof seedDecisions)[number];
 type Playbook = (typeof seedPlaybooks)[number];
 type Notification = (typeof seedNotifications)[number];
+type DemoTask = Task & { completedSubtasks?: string[] };
 
 export type ChatMessage = {
   id: string;
@@ -143,7 +144,7 @@ type PulseState = {
   teamMembers: TeamMember[];
   invites: Invite[];
   projects: Project[];
-  tasks: Task[];
+  tasks: DemoTask[];
   approvals: (Approval & { resolvedAt?: string; resolvedBy?: string; linkedTaskId?: string })[];
   expenses: Expense[];
   blockers: Blocker[];
@@ -162,6 +163,7 @@ type PulseState = {
   generatedAiSummaries: Record<string, string>;
   autopilotPlans: AutopilotPlan[];
   selectedTheme: string;
+  selectedTeamContext: string;
   setHasHydrated: (value: boolean) => void;
   resetDemoData: () => void;
   markNotificationRead: (notificationId: string) => void;
@@ -180,8 +182,8 @@ type PulseState = {
   approveExpense: (expenseId: string) => void;
   rejectExpense: (expenseId: string) => void;
   submitExpense: (data?: Partial<Expense>) => string;
-  createTask: (data: Partial<Task>) => string;
-  updateTask: (taskId: string, updates: Partial<Task>) => void;
+  createTask: (data: Partial<DemoTask>) => string;
+  updateTask: (taskId: string, updates: Partial<DemoTask>) => void;
   toggleSubtask: (taskId: string, subtaskId: string) => void;
   submitTaskProof: (taskId: string, proofData?: string) => void;
   completeTask: (taskId: string) => void;
@@ -214,6 +216,7 @@ type PulseState = {
   updateSettings: (updates: Partial<SettingsState>) => void;
   toggleSetting: (key: string) => void;
   setSelectedTheme: (theme: string) => void;
+  setSelectedTeamContext: (team: string) => void;
 };
 
 function clone<T>(value: T): T {
@@ -371,6 +374,7 @@ function initialData() {
     generatedAiSummaries: {},
     autopilotPlans: [],
     selectedTheme: "midnight",
+    selectedTeamContext: "All teams",
   };
 }
 
@@ -524,7 +528,7 @@ export const usePulseStore = create<PulseState>()(
       },
       createTask: (data) => {
         const taskId = data.id ?? id("task");
-        const task: Task = {
+        const task: DemoTask = {
           id: taskId,
           title: data.title ?? "New workspace task",
           project: data.project ?? "Q3 Launch Review",
@@ -541,12 +545,26 @@ export const usePulseStore = create<PulseState>()(
           commentsCount: data.commentsCount ?? 0,
           comments: data.comments ?? 0,
           aiReview: data.aiReview ?? "Created in Pulse.",
+          completedSubtasks: data.completedSubtasks ?? [],
         };
         set((state) => ({ tasks: [task, ...state.tasks], activityFeed: [`Task created: ${task.title}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Task created: ${taskId}`, ...state.auditTrail] }));
         return taskId;
       },
       updateTask: (taskId, updates) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, ...updates } : task), auditTrail: [`${nowLabel()} · Task updated: ${taskId}`, ...state.auditTrail] })),
-      toggleSubtask: (taskId, subtaskId) => set((state) => ({ auditTrail: [`${nowLabel()} · Subtask checked: ${taskId}/${subtaskId}`, ...state.auditTrail] })),
+      toggleSubtask: (taskId, subtaskId) => set((state) => ({
+        tasks: state.tasks.map((task) => {
+          if (task.id !== taskId) return task;
+          const completed = task.completedSubtasks ?? [];
+          const isComplete = completed.includes(subtaskId);
+          return {
+            ...task,
+            completedSubtasks: isComplete
+              ? completed.filter((item) => item !== subtaskId)
+              : [...completed, subtaskId],
+          };
+        }),
+        auditTrail: [`${nowLabel()} · Subtask toggled: ${taskId}/${subtaskId}`, ...state.auditTrail],
+      })),
       submitTaskProof: (taskId, proofData = "Submitted proof") => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, proofStatus: "Submitted", proof: proofData } : task), activityFeed: [`Task proof submitted: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
       completeTask: (taskId) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, status: "Completed" } : task), activityFeed: [`Task completed: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
       reassignTask: (taskId, newOwner) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, owner: newOwner } : task), auditTrail: [`${nowLabel()} · Task reassigned: ${taskId} to ${newOwner}`, ...state.auditTrail] })),
@@ -645,6 +663,7 @@ export const usePulseStore = create<PulseState>()(
       updateSettings: (updates) => set((state) => ({ settings: { ...state.settings, ...updates, toggles: updates.toggles ? { ...state.settings.toggles, ...updates.toggles } : state.settings.toggles } })),
       toggleSetting: (key) => set((state) => ({ settings: { ...state.settings, reduceMotion: key === "Reduce motion" ? !state.settings.reduceMotion : state.settings.reduceMotion, toggles: { ...state.settings.toggles, [key]: !state.settings.toggles[key] } } })),
       setSelectedTheme: (theme) => set((state) => ({ selectedTheme: theme, settings: { ...state.settings, theme: themeLabels[theme] ?? theme } })),
+      setSelectedTeamContext: (team) => set({ selectedTeamContext: team }),
     }),
     {
       name: STORAGE_KEY,

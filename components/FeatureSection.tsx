@@ -47,8 +47,7 @@ export default function FeatureSection() {
         <motion.div
           className="mb-14"
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: "#4D5E78" }}>
@@ -77,8 +76,7 @@ export default function FeatureSection() {
                   border: "1px solid rgba(255,255,255,0.055)",
                 }}
                 initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: i * 0.07 }}
                 whileHover={{
                   y: -2,

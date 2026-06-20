@@ -35,8 +35,45 @@
   box-sizing: border-box;
 }
 
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+textarea {
+  overflow-y: auto;
+}
+
+p,
+li,
+dd,
+td,
+th {
+  overflow-wrap: anywhere;
+}
+
+.pulse-app :is(.grid, .flex) > * {
+  min-width: 0;
+}
+
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+html,
+body {
+  max-width: 100%;
 }
 
 body {

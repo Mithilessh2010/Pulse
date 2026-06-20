@@ -18,7 +18,7 @@ export default function VerifyPage({ searchParams }: VerifyPageProps) {
     <AuthShell
       eyebrow="Email verification"
       title="Enter your code"
-      description="Use the 6-digit code generated for your account. In development, Pulse logs it in the server console."
+      description="Use the 6-digit verification code for your account to unlock your workspace."
     >
       <VerifyForm email={email} />
     </AuthShell>
