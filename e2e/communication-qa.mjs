@@ -30,6 +30,12 @@ try {
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL("**/app");
 
+  const routes = ["/", "/product", "/features", "/pricing", "/demo", "/signin", "/signup", "/app", "/app/chat", "/app/calls", "/app/meetings", "/app/approvals", "/app/tasks", "/app/projects", "/app/settings", "/app/ask", "/app/projects?project=website-redesign", "/app/chat?room=website", "/app/approvals?approval=approval-q3-dashboard", "/app/calls?call=call-website-redesign-unblock"];
+  for (const route of routes) {
+    const response = await page.goto(`${baseURL}${route}`, { waitUntil: "domcontentloaded" });
+    check(Boolean(response?.ok()) && (!route.startsWith("/app") || new URL(page.url()).pathname.startsWith("/app")), `${route} loads`);
+  }
+
   const token = Date.now().toString().slice(-6);
   await page.goto(`${baseURL}/app/chat?dm=maya`, { waitUntil: "networkidle" });
   await page.getByLabel("Write a message in Maya Chen").fill(`DM persistence ${token}`);
@@ -96,6 +102,24 @@ try {
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await page.waitForURL("**/app/chat?dm=alex");
   check(await page.getByText(`Manager message ${token}`, { exact: true }).last().isVisible(), "Manager new-message action sends and opens DM");
+
+  await page.goto(`${baseURL}/app/approvals`, { waitUntil: "networkidle" });
+  const approveButton = page.getByRole("button", { name: "Approve", exact: true }).last();
+  if (await approveButton.isVisible().catch(() => false)) await approveButton.click();
+  await page.reload({ waitUntil: "networkidle" });
+  check((await page.evaluate(() => localStorage.getItem("pulse-demo-state-v1") ?? "")).includes('"status":"Approved"'), "Approval action persists after refresh");
+
+  await page.getByRole("button", { name: "Open appearance menu" }).click();
+  await page.getByRole("button", { name: /Light Executive/ }).click();
+  await page.reload({ waitUntil: "networkidle" });
+  check((await page.evaluate(() => localStorage.getItem("pulse-demo-state-v1") ?? "")).includes('"selectedTheme":"light"'), "Theme persists after refresh");
+
+  await page.goto(`${baseURL}/app/ask`, { waitUntil: "networkidle" });
+  await page.getByLabel("Ask Pulse prompt").fill("What needs attention?");
+  const askButton = page.locator("button").filter({ hasText: /^Ask Pulse$/ }).last();
+  await askButton.click();
+  await askButton.waitFor({ state: "visible", timeout: 20000 });
+  check(await page.getByText(/risk|attention|priority|approval/i).last().isVisible(), "Ask Pulse returns a visible response");
 
   for (const route of ["/app/chat?dm=maya", "/app/calls", "/app/meetings"]) {
     await page.setViewportSize({ width: 390, height: 844 });
