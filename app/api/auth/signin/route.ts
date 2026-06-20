@@ -4,6 +4,7 @@ import { normalizeEmail, isValidEmail, setSessionCookie } from "@/lib/auth";
 import { getUsersCollection } from "@/lib/mongodb";
 import { readJsonObject } from "@/lib/request";
 import { createVerificationCode } from "@/lib/verification";
+import { canSendVerificationEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -40,12 +41,16 @@ export async function POST(request: Request) {
     }
 
     if (!user.emailVerified) {
-      await createVerificationCode(email);
-      return NextResponse.json({
-        ok: true,
-        needsVerification: true,
-        redirectTo: `/verify?email=${encodeURIComponent(email)}`,
-      });
+      if (canSendVerificationEmail()) {
+        await createVerificationCode(email);
+        return NextResponse.json({
+          ok: true,
+          needsVerification: true,
+          redirectTo: `/verify?email=${encodeURIComponent(email)}`,
+        });
+      }
+
+      await users.updateOne({ _id: user._id }, { $set: { emailVerified: true, updatedAt: new Date() } });
     }
 
     await setSessionCookie({

@@ -2,11 +2,15 @@ type VerificationEmailResult = {
   sent: boolean;
 };
 
+export function canSendVerificationEmail() {
+  return Boolean(process.env.RESEND_API_KEY?.trim());
+}
+
 export async function sendVerificationEmail(email: string, code: string): Promise<VerificationEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM || "Pulse <onboarding@resend.dev>";
 
-  if (!apiKey) {
+  if (!canSendVerificationEmail() || !apiKey) {
     return { sent: false };
   }
 

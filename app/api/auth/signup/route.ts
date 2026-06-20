@@ -4,6 +4,7 @@ import { normalizeEmail, isValidEmail } from "@/lib/auth";
 import { getUsersCollection } from "@/lib/mongodb";
 import { readJsonObject } from "@/lib/request";
 import { createVerificationCode } from "@/lib/verification";
+import { canSendVerificationEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -53,23 +54,29 @@ export async function POST(request: Request) {
 
     const now = new Date();
     const passwordHash = await bcrypt.hash(password, 12);
+    const verificationRequired = canSendVerificationEmail();
 
     await users.insertOne({
       name,
       email,
       passwordHash,
       workspaceName,
-      emailVerified: false,
+      emailVerified: !verificationRequired,
       role: "owner",
       createdAt: now,
       updatedAt: now,
     });
 
-    await createVerificationCode(email);
+    if (verificationRequired) {
+      await createVerificationCode(email);
+    }
 
     return NextResponse.json({
       ok: true,
-      redirectTo: `/verify?email=${encodeURIComponent(email)}`,
+      verificationRequired,
+      redirectTo: verificationRequired
+        ? `/verify?email=${encodeURIComponent(email)}`
+        : "/signin?created=1",
     });
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {

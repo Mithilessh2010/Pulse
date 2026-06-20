@@ -52,7 +52,7 @@ export default function SignupForm() {
         return;
       }
 
-      setSuccess("Account created. Opening verification.");
+      setSuccess(data.verificationRequired ? "Account created. Opening verification." : "Account created. Opening sign in.");
       router.push(typeof data.redirectTo === "string" ? data.redirectTo : `/verify?email=${encodeURIComponent(email)}`);
     } catch {
       setError("Unable to create account. Try again in a moment.");
