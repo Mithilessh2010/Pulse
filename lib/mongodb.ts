@@ -34,8 +34,17 @@ function getMongoUri() {
 
 export function getMongoClient() {
   if (!clientPromise) {
-    const client = new MongoClient(getMongoUri());
-    clientPromise = client.connect();
+    const client = new MongoClient(getMongoUri(), {
+      connectTimeoutMS: 8_000,
+      maxPoolSize: 10,
+      minPoolSize: 0,
+      serverSelectionTimeoutMS: 5_000,
+    });
+    clientPromise = client.connect().catch((error) => {
+      clientPromise = null;
+      indexesReady = null;
+      throw error;
+    });
   }
 
   return clientPromise;
