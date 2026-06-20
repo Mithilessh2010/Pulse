@@ -11,8 +11,13 @@ export default function LogoutButton() {
   async function logout() {
     setLoading(true);
     window.localStorage.removeItem("pulse-demo-session");
-    router.push("/");
-    router.refresh();
+    window.localStorage.removeItem("pulse-demo-state-v1");
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/signin");
+      router.refresh();
+    }
   }
 
   return (

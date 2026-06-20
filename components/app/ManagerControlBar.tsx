@@ -154,9 +154,15 @@ export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSide
     setModal(null);
   }
 
-  function logout() {
+  async function logout() {
     window.localStorage.removeItem("pulse-demo-session");
-    router.push("/");
+    window.localStorage.removeItem("pulse-demo-state-v1");
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/signin");
+      router.refresh();
+    }
   }
 
   const quickActions = [

@@ -181,9 +181,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     setSelectedTheme(themes[(currentIndex + 1) % themes.length].id);
   }
 
-  function logout() {
+  async function logout() {
     window.localStorage.removeItem("pulse-demo-session");
-    router.push("/");
+    window.localStorage.removeItem("pulse-demo-state-v1");
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/signin");
+      router.refresh();
+    }
   }
 
   function submitCommand(event: FormEvent<HTMLFormElement>) {
