@@ -259,7 +259,7 @@ export function ManagerControlBar({ currentUser, onOpenSidebar, onOpenPalette }:
             {selectedTheme === "light" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             <span className="hidden 2xl:inline">{activeThemeName}</span>
           </button>
-          <button title={`Profile: ${currentUser.name}`} aria-label="Open profile menu" onClick={() => { closeMenus(); setProfileOpen(true); }} className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">{userInitial}</button>
+          <button title={`Profile: ${currentUser.name}`} aria-label={`Open profile menu for ${currentUser.name}`} onClick={() => { closeMenus(); setProfileOpen(true); }} className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">{userInitial}</button>
         </div>
       </div>
 
