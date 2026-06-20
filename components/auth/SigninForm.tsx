@@ -8,7 +8,7 @@ import AuthMessage from "@/components/auth/AuthMessage";
 import SocialAuthOptions from "@/components/auth/SocialAuthOptions";
 import SubmitButton from "@/components/auth/SubmitButton";
 
-export default function SigninForm() {
+export default function SigninForm({ accountCreated = false }: { accountCreated?: boolean }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +59,9 @@ export default function SigninForm() {
         }}
       />
       <form onSubmit={handleSubmit} className="space-y-4">
+        {accountCreated ? (
+          <AuthMessage type="success">Account created. Sign in to open your new workspace.</AuthMessage>
+        ) : null}
         <AuthField
           label="Email address"
           name="email"

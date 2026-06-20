@@ -38,6 +38,7 @@ import { PulseLogo } from "@/components/PulseLogo";
 import { ManagerControlBar } from "@/components/app/ManagerControlBar";
 import { Modal } from "@/components/app/Modal";
 import { askPulseResponses } from "@/lib/mockData";
+import type { AuthUser } from "@/lib/auth";
 import { usePulseStore } from "@/stores/usePulseStore";
 
 const navGroups = [
@@ -115,7 +116,7 @@ const themes = [
 
 type ModalKind = "Create Project" | "Create Task" | "Invite Member" | "Create Team" | "Submit Expense" | "Generate Report";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, currentUser }: { children: ReactNode; currentUser: AuthUser }) {
   const pathname = usePathname();
   const router = useRouter();
   const meta = pageMeta[pathname] ?? pageMeta["/app"];
@@ -145,6 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [miniPrompt, setMiniPrompt] = useState("");
   const [miniAnswer, setMiniAnswer] = useState(askPulseResponses["What is at risk?"]);
   const theme = themes.find((item) => item.id === themeId) ?? themes[0];
+  const userInitial = currentUser.name.trim().charAt(0).toUpperCase() || "U";
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -284,11 +286,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="shrink-0 border-t border-[var(--border-subtle)] p-4">
       <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4">
         <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--text-muted)]">Workspace</p>
-        <p className="mt-2 text-sm font-semibold text-[var(--pulse-text)]">{enterprise.name}</p>
+        <p className="mt-2 text-sm font-semibold text-[var(--pulse-text)]">{currentUser.workspaceName}</p>
         <div className="mt-4 flex items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-semibold text-white">M</div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-semibold text-white">{userInitial}</div>
           <div>
-            <p className="text-sm font-medium text-[var(--pulse-text)]">{enterprise.owner}</p>
+            <p className="text-sm font-medium text-[var(--pulse-text)]">{currentUser.name}</p>
             <p className="text-xs text-[var(--text-muted)]">Owner</p>
           </div>
         </div>
@@ -347,7 +349,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <ManagerControlBar onOpenSidebar={() => setMobileOpen(true)} onOpenPalette={() => setPaletteOpen(true)} />
+          <ManagerControlBar currentUser={currentUser} onOpenSidebar={() => setMobileOpen(true)} onOpenPalette={() => setPaletteOpen(true)} />
           <div className="min-w-0 p-4 pb-24 md:p-6 md:pb-28">{children}</div>
         </div>
       </div>

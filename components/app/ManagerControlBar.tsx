@@ -31,6 +31,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { PulseLogo } from "@/components/PulseLogo";
 import { Modal } from "@/components/app/Modal";
+import type { AuthUser } from "@/lib/auth";
 import { usePulseStore } from "@/stores/usePulseStore";
 
 type ControlModal = "Create Task" | "Invite Member" | "Start Huddle" | "Generate Report";
@@ -65,7 +66,7 @@ const pageLabels: Record<string, string> = {
   "/app/settings": "Settings",
 };
 
-export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSidebar: () => void; onOpenPalette: () => void }) {
+export function ManagerControlBar({ currentUser, onOpenSidebar, onOpenPalette }: { currentUser: AuthUser; onOpenSidebar: () => void; onOpenPalette: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const commandRef = useRef<HTMLInputElement>(null);
@@ -99,6 +100,7 @@ export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSide
 
   const unreadCount = notifications.filter((item) => item.unread).length;
   const activeThemeName = appearanceOptions.find((item) => item.id === selectedTheme)?.name ?? "Midnight Pulse";
+  const userInitial = currentUser.name.trim().charAt(0).toUpperCase() || "U";
   const filteredSuggestions = useMemo(() => {
     const clean = command.trim().toLowerCase();
     if (!clean) return suggestions;
@@ -183,7 +185,7 @@ export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSide
         <div className="relative z-20 hidden min-w-0 shrink-0 items-center gap-2 lg:flex">
           <MenuButton open={workspaceOpen} onClick={() => { closeMenus(); setWorkspaceOpen(true); }} className="min-w-[150px]">
             <span className="[&>div]:h-6 [&>div]:w-6 [&_svg]:h-6 [&_svg]:w-6"><PulseLogo /></span>
-            <span className="truncate">{enterprise.name}</span>
+            <span className="truncate">{currentUser.workspaceName}</span>
             <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
           </MenuButton>
           <MenuButton open={teamOpen} onClick={() => { closeMenus(); setTeamOpen(true); }} className="min-w-[128px]">
@@ -196,7 +198,7 @@ export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSide
 
         <div className="flex min-w-0 flex-1 items-center gap-2 lg:hidden">
           <button type="button" onClick={() => { closeMenus(); setWorkspaceOpen(true); }} className="min-w-0 flex-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-left text-sm font-semibold text-[var(--text-primary)]">
-            <span className="block truncate">{enterprise.name}</span>
+            <span className="block truncate">{currentUser.workspaceName}</span>
           </button>
           <button aria-label="Ask Pulse or search" onClick={() => commandRef.current?.focus()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)]">
             <Search className="h-4 w-4" />
@@ -257,7 +259,7 @@ export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSide
             {selectedTheme === "light" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             <span className="hidden 2xl:inline">{activeThemeName}</span>
           </button>
-          <button title="Profile" aria-label="Open profile menu" onClick={() => { closeMenus(); setProfileOpen(true); }} className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">M</button>
+          <button title={`Profile: ${currentUser.name}`} aria-label="Open profile menu" onClick={() => { closeMenus(); setProfileOpen(true); }} className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">{userInitial}</button>
         </div>
       </div>
 
@@ -269,10 +271,10 @@ export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSide
       </div>
 
       <FloatingMenu open={workspaceOpen} onClose={() => setWorkspaceOpen(false)} className="left-3 top-[74px] w-[300px] lg:left-[305px]">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{enterprise.name}</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{currentUser.workspaceName}</p>
         <p className="mt-1 text-xs text-[var(--text-muted)]">{enterprise.plan} · {members.length} members</p>
         <div className="mt-3 space-y-1">
-          {["Acme Ops", "Demo Workspace"].map((name) => <div key={name} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)]"><span>{name}</span>{name === enterprise.name ? <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-2)]">Current</span> : null}</div>)}
+          <div className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)]"><span className="truncate">{currentUser.workspaceName}</span><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-2)]">Current</span></div>
           <button disabled className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-muted)] opacity-55">Create workspace</button>
           <button onClick={() => router.push("/app/settings")} className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)]">Manage workspace</button>
         </div>
@@ -309,8 +311,9 @@ export function ManagerControlBar({ onOpenSidebar, onOpenPalette }: { onOpenSide
 
       <FloatingMenu open={profileOpen} onClose={() => setProfileOpen(false)} className="right-3 top-[74px] w-[270px]">
         <div className="mb-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
-          <p className="font-semibold text-[var(--text-primary)]">{enterprise.owner}</p>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">Owner · {enterprise.name}</p>
+          <p className="font-semibold text-[var(--text-primary)]">{currentUser.name}</p>
+          <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{currentUser.email}</p>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">Owner · {currentUser.workspaceName}</p>
         </div>
         <button onClick={() => router.push("/app/settings")} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)]"><Settings className="h-4 w-4" />Settings</button>
         <button onClick={resetDemoData} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)]"><Bot className="h-4 w-4" />Reset demo data</button>
