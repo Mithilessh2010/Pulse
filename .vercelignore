@@ -1,6 +1,7 @@
-node_modules/
+.git/
 .next/
 .vercel/
+node_modules/
 _deliverables/
 
 .env
@@ -12,4 +13,3 @@ _deliverables/
 playwright-report/
 test-results/
 .DS_Store
-.vercel
