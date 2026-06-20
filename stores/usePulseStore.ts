@@ -38,6 +38,11 @@ type Member = (typeof seedMembers)[number];
 type Invite = (typeof seedInvites)[number];
 type Meeting = (typeof seedMeetings)[number] & {
   generatedAgenda?: string[];
+  status?: "Upcoming" | "In progress" | "Completed";
+  scheduledAt?: string;
+  notes?: string;
+  decisions?: string[];
+  linkedCallId?: string;
   notesComplete?: boolean;
   followUpTaskIds?: string[];
 };
@@ -54,8 +59,19 @@ export type ChatMessage = {
   body: string;
   createdAt: string;
   type?: "message" | "system" | "ai-summary";
+  reactions?: Record<string, string[]>;
+  edited?: boolean;
+  pinned?: boolean;
   convertedToTaskId?: string;
   pinnedAsDecisionId?: string;
+};
+
+export type DirectConversation = {
+  id: string;
+  memberId: string;
+  unreadCount: number;
+  isRead: boolean;
+  messages: ChatMessage[];
 };
 
 export type ChatRoom = {
@@ -124,6 +140,8 @@ export type CallRecord = {
   notes: string[];
   decisions: string[];
   actionItemIds: string[];
+  chatMessages?: ChatMessage[];
+  summary?: string;
   startedAt?: string;
   endedAt?: string;
 };
@@ -151,6 +169,7 @@ type PulseState = {
   inboxItems: InboxItem[];
   notifications: Notification[];
   chatRooms: ChatRoom[];
+  directMessages: DirectConversation[];
   calls: CallRecord[];
   meetings: Meeting[];
   decisions: Decision[];
@@ -172,6 +191,14 @@ type PulseState = {
   markInboxDone: (itemId: string) => void;
   snoozeInboxItem: (itemId: string) => void;
   sendChatMessage: (roomId: string, body: string) => ChatMessage | null;
+  sendDirectMessage: (memberId: string, body: string) => ChatMessage | null;
+  markConversationRead: (conversationId: string) => void;
+  addReaction: (conversationId: string, messageId: string, reaction: string) => void;
+  removeReaction: (conversationId: string, messageId: string, reaction: string) => void;
+  pinMessage: (conversationId: string, messageId: string, pinned?: boolean) => void;
+  editMessage: (conversationId: string, messageId: string, newBody: string) => void;
+  deleteMessage: (conversationId: string, messageId: string) => void;
+  sendCallMessage: (callId: string, body: string) => void;
   markRoomRead: (roomId: string) => void;
   startHuddleFromRoom: (roomId: string) => string | null;
   summarizeChatRoom: (roomId: string) => string;
@@ -208,6 +235,11 @@ type PulseState = {
   generateCallAgenda: (callId: string) => void;
   createCallFollowUpTasks: (callId: string) => void;
   updateCallNotes: (callId: string, notes: string[]) => void;
+  generateCallSummary: (callId: string) => void;
+  scheduleMeeting: (data: { title: string; participants: string[]; project: string; agenda?: string; scheduledAt?: string }) => string;
+  startMeeting: (meetingId: string) => string | null;
+  endMeeting: (meetingId: string) => void;
+  saveMeetingNotes: (meetingId: string, notes: string) => void;
   generateMeetingAgenda: (meetingId: string) => void;
   createMeetingFollowUpTasks: (meetingId: string) => void;
   markMeetingNotesComplete: (meetingId: string) => void;
@@ -266,6 +298,26 @@ function buildInitialChatRooms(): ChatRoom[] {
       })),
     };
   });
+}
+
+function buildInitialDirectMessages(): DirectConversation[] {
+  const examples: Record<string, string> = {
+    maya: "Can you review the Q3 approval queue when you have a second?",
+    alex: "I uploaded the final desktop mockups. Mobile screenshots are still missing.",
+    jordan: "I have capacity today if Product needs help moving one task.",
+    priya: "Finance numbers will be ready after the budget review.",
+  };
+  return seedMembers.filter((member) => member.id !== "mithilessh").map((member, index) => ({
+    id: `dm-${member.id}`,
+    memberId: member.id,
+    unreadCount: index < 4 ? 1 : 0,
+    isRead: index >= 4,
+    messages: [{
+      id: `dm-${member.id}-seed`, roomId: `dm-${member.id}`, sender: member.name,
+      senderInitials: initials(member.name), body: examples[member.id] ?? `${member.name} shared a workspace update.`,
+      createdAt: index < 2 ? "9:42 AM" : "Yesterday", type: "message", reactions: {},
+    }],
+  }));
 }
 
 function buildInboxItems(): InboxItem[] {
@@ -362,6 +414,7 @@ function initialData() {
     inboxItems: buildInboxItems(),
     notifications: clone(seedNotifications),
     chatRooms: buildInitialChatRooms(),
+    directMessages: buildInitialDirectMessages(),
     calls: buildInitialCalls(),
     meetings: clone(seedMeetings),
     decisions: clone(seedDecisions),
@@ -406,6 +459,39 @@ export const usePulseStore = create<PulseState>()(
         }));
         return message;
       },
+      sendDirectMessage: (memberId, body) => {
+        const clean = body.trim();
+        if (!clean) return null;
+        const conversationId = `dm-${memberId}`;
+        const message: ChatMessage = { id: id("message"), roomId: conversationId, sender: "You", senderInitials: "Y", body: clean, createdAt: "Now", type: "message", reactions: {} };
+        set((state) => ({
+          directMessages: state.directMessages.map((conversation) => conversation.memberId === memberId ? { ...conversation, isRead: true, unreadCount: 0, messages: [...conversation.messages, message] } : conversation),
+          activityFeed: [`Direct message sent to ${state.members.find((member) => member.id === memberId)?.name ?? memberId}`, ...state.activityFeed],
+          auditTrail: [`${nowLabel()} · Direct message sent: ${memberId}`, ...state.auditTrail],
+        }));
+        return message;
+      },
+      markConversationRead: (conversationId) => set((state) => ({
+        directMessages: state.directMessages.map((conversation) => conversation.id === conversationId ? { ...conversation, isRead: true, unreadCount: 0 } : conversation),
+        chatRooms: state.chatRooms.map((room) => room.id === conversationId ? { ...room, isRead: true, unreadCount: 0 } : room),
+      })),
+      addReaction: (conversationId, messageId, reaction) => set((state) => {
+        const update = (message: ChatMessage) => message.id === messageId ? { ...message, reactions: { ...(message.reactions ?? {}), [reaction]: Array.from(new Set([...(message.reactions?.[reaction] ?? []), "You"])) } } : message;
+        return { chatRooms: state.chatRooms.map((room) => room.id === conversationId ? { ...room, messages: room.messages.map(update) } : room), directMessages: state.directMessages.map((conversation) => conversation.id === conversationId ? { ...conversation, messages: conversation.messages.map(update) } : conversation) };
+      }),
+      removeReaction: (conversationId, messageId, reaction) => set((state) => {
+        const update = (message: ChatMessage) => message.id === messageId ? { ...message, reactions: { ...(message.reactions ?? {}), [reaction]: (message.reactions?.[reaction] ?? []).filter((person) => person !== "You") } } : message;
+        return { chatRooms: state.chatRooms.map((room) => room.id === conversationId ? { ...room, messages: room.messages.map(update) } : room), directMessages: state.directMessages.map((conversation) => conversation.id === conversationId ? { ...conversation, messages: conversation.messages.map(update) } : conversation) };
+      }),
+      pinMessage: (conversationId, messageId, pinned = true) => set((state) => {
+        const update = (message: ChatMessage) => message.id === messageId ? { ...message, pinned } : message;
+        return { chatRooms: state.chatRooms.map((room) => room.id === conversationId ? { ...room, messages: room.messages.map(update) } : room), directMessages: state.directMessages.map((conversation) => conversation.id === conversationId ? { ...conversation, messages: conversation.messages.map(update) } : conversation) };
+      }),
+      editMessage: (conversationId, messageId, newBody) => set((state) => {
+        const update = (message: ChatMessage) => message.id === messageId ? { ...message, body: newBody.trim() || message.body, edited: true } : message;
+        return { chatRooms: state.chatRooms.map((room) => room.id === conversationId ? { ...room, messages: room.messages.map(update) } : room), directMessages: state.directMessages.map((conversation) => conversation.id === conversationId ? { ...conversation, messages: conversation.messages.map(update) } : conversation) };
+      }),
+      deleteMessage: (conversationId, messageId) => set((state) => ({ chatRooms: state.chatRooms.map((room) => room.id === conversationId ? { ...room, messages: room.messages.filter((message) => message.id !== messageId) } : room), directMessages: state.directMessages.map((conversation) => conversation.id === conversationId ? { ...conversation, messages: conversation.messages.filter((message) => message.id !== messageId) } : conversation) })),
       markRoomRead: (roomId) => set((state) => ({ chatRooms: state.chatRooms.map((room) => room.id === roomId ? { ...room, isRead: true, unreadCount: 0 } : room) })),
       startHuddleFromRoom: (roomId) => {
         const room = get().chatRooms.find((item) => item.id === roomId);
@@ -436,11 +522,12 @@ export const usePulseStore = create<PulseState>()(
       },
       convertMessageToTask: (roomId, messageId) => {
         const room = get().chatRooms.find((item) => item.id === roomId);
-        const message = room?.messages.find((item) => item.id === messageId);
-        if (!room || !message) return null;
+        const direct = get().directMessages.find((item) => item.id === roomId);
+        const message = room?.messages.find((item) => item.id === messageId) ?? direct?.messages.find((item) => item.id === messageId);
+        if (!message) return null;
         const taskId = get().createTask({
           title: `Follow up: ${message.body.slice(0, 54)}`,
-          project: room.linkedProject ?? "Q3 Launch Review",
+          project: room?.linkedProject ?? "Q3 Launch Review",
           owner: "Mithilessh",
           priority: "Medium",
           dueDate: "Tomorrow",
@@ -453,26 +540,28 @@ export const usePulseStore = create<PulseState>()(
           subtasks: ["Confirm owner", "Add context", "Share update"],
           commentsCount: 0,
           comments: 0,
-          aiReview: "Created from a Work Rooms message.",
+          aiReview: `Created from ${room?.name ?? "a direct message"}.`,
         });
         set((state) => ({
           chatRooms: state.chatRooms.map((item) => item.id === roomId ? { ...item, messages: item.messages.map((chatMessage) => chatMessage.id === messageId ? { ...chatMessage, convertedToTaskId: taskId } : chatMessage) } : item),
+          directMessages: state.directMessages.map((item) => item.id === roomId ? { ...item, messages: item.messages.map((chatMessage) => chatMessage.id === messageId ? { ...chatMessage, convertedToTaskId: taskId } : chatMessage) } : item),
         }));
         return taskId;
       },
       pinMessageAsDecision: (roomId, messageId) => {
         const room = get().chatRooms.find((item) => item.id === roomId);
-        const message = room?.messages.find((item) => item.id === messageId);
-        if (!room || !message) return null;
+        const direct = get().directMessages.find((item) => item.id === roomId);
+        const message = room?.messages.find((item) => item.id === messageId) ?? direct?.messages.find((item) => item.id === messageId);
+        if (!message) return null;
         const decisionId = get().addDecision({
           title: message.body,
-          summary: `Pinned from ${room.name}.`,
+          summary: `Pinned from ${room?.name ?? "a direct message"}.`,
           owner: message.sender,
-          project: room.linkedProject ?? "Acme Ops",
-          team: room.linkedTeam ?? "Leadership",
+          project: room?.linkedProject ?? "Acme Ops",
+          team: room?.linkedTeam ?? "Leadership",
           date: "Today",
           impact: "Keeps the room decision visible",
-          source: room.name,
+          source: room?.name ?? "Direct Messages",
           status: "Active",
         });
         set((state) => ({
@@ -481,6 +570,7 @@ export const usePulseStore = create<PulseState>()(
             pinnedDecisionIds: Array.from(new Set([...item.pinnedDecisionIds, decisionId])),
             messages: item.messages.map((chatMessage) => chatMessage.id === messageId ? { ...chatMessage, pinnedAsDecisionId: decisionId } : chatMessage),
           } : item),
+          directMessages: state.directMessages.map((item) => item.id === roomId ? { ...item, messages: item.messages.map((chatMessage) => chatMessage.id === messageId ? { ...chatMessage, pinnedAsDecisionId: decisionId } : chatMessage) } : item),
         }));
         return decisionId;
       },
@@ -645,6 +735,33 @@ export const usePulseStore = create<PulseState>()(
         set((state) => ({ calls: state.calls.map((item) => item.id === callId ? { ...item, actionItemIds: [...item.actionItemIds, taskId] } : item) }));
       },
       updateCallNotes: (callId, notes) => set((state) => ({ calls: state.calls.map((call) => call.id === callId ? { ...call, notes } : call) })),
+      sendCallMessage: (callId, body) => {
+        const clean = body.trim();
+        if (!clean) return;
+        const message: ChatMessage = { id: id("call-message"), roomId: callId, sender: "You", senderInitials: "Y", body: clean, createdAt: "Now", reactions: {} };
+        set((state) => ({ calls: state.calls.map((call) => call.id === callId ? { ...call, chatMessages: [...(call.chatMessages ?? []), message] } : call) }));
+      },
+      generateCallSummary: (callId) => set((state) => ({ calls: state.calls.map((call) => call.id === callId ? { ...call, summary: `${call.title}: ${call.notes.join(" ") || call.reason} Owners confirmed next actions and follow-up work.` } : call) })),
+      scheduleMeeting: (data) => {
+        const meetingId = id("meeting");
+        const meeting: Meeting = { id: meetingId, title: data.title, participants: data.participants, project: data.project, duration: "30 min", why: "Scheduled from Pulse communication controls.", agenda: data.agenda ? [data.agenda] : ["Review context", "Confirm decisions", "Assign next actions"], generatedAgenda: data.agenda ? [data.agenda] : undefined, scheduledAt: data.scheduledAt ?? "Next available time", status: "Upcoming", notes: "", decisions: [], followUpTaskIds: [] };
+        set((state) => ({ meetings: [meeting, ...state.meetings], activityFeed: [`Meeting scheduled: ${meeting.title}`, ...state.activityFeed], auditTrail: [`${nowLabel()} · Meeting scheduled: ${meetingId}`, ...state.auditTrail] }));
+        return meetingId;
+      },
+      startMeeting: (meetingId) => {
+        const meeting = get().meetings.find((item) => item.id === meetingId);
+        if (!meeting) return null;
+        const callId = meeting.linkedCallId ?? get().createCall({ title: meeting.title, participants: meeting.participants, relatedProject: meeting.project, reason: meeting.why, duration: meeting.duration, status: "In progress", startedAt: nowLabel(), agenda: meeting.generatedAgenda ?? meeting.agenda, notes: meeting.notes ? [meeting.notes] : [] });
+        set((state) => ({ meetings: state.meetings.map((item) => item.id === meetingId ? { ...item, status: "In progress", linkedCallId: callId } : item) }));
+        return callId;
+      },
+      endMeeting: (meetingId) => {
+        const meeting = get().meetings.find((item) => item.id === meetingId);
+        const linkedCall = meeting?.linkedCallId ? get().calls.find((call) => call.id === meeting.linkedCallId) : undefined;
+        if (linkedCall && linkedCall.status !== "Completed") get().endCall(linkedCall.id);
+        set((state) => ({ meetings: state.meetings.map((item) => item.id === meetingId ? { ...item, status: "Completed", notesComplete: true } : item) }));
+      },
+      saveMeetingNotes: (meetingId, notes) => set((state) => ({ meetings: state.meetings.map((meeting) => meeting.id === meetingId ? { ...meeting, notes } : meeting) })),
       generateMeetingAgenda: (meetingId) => set((state) => ({ meetings: state.meetings.map((meeting) => meeting.id === meetingId ? { ...meeting, generatedAgenda: [...meeting.agenda, "Confirm owners", "Publish follow-ups"] } : meeting) })),
       createMeetingFollowUpTasks: (meetingId) => {
         const meeting = get().meetings.find((item) => item.id === meetingId);

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { CallsScreen } from "@/components/app-shell/EnterpriseScreens";
+import { CallsHub } from "@/components/communication/CallsHub";
 
 export default function CallsPage() {
-  return <Suspense fallback={null}><CallsScreen /></Suspense>;
+  return <Suspense fallback={null}><CallsHub /></Suspense>;
 }

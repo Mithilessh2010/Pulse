@@ -187,7 +187,7 @@ export function ActivityFeed({ items }: { items: string[] }) {
     <DashboardCard title="Recent Activity" subtitle="Latest workspace events">
       <div className="space-y-3">
         {items.map((item, index) => (
-          <div key={item} className="flex gap-3">
+          <div key={`${item}-${index}`} className="flex gap-3">
             <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/[0.055] text-[11px] font-semibold text-[#8B7FFF]">{index + 1}</div>
             <div className="border-b border-[var(--border-subtle)] pb-3 last:border-0 last:pb-0">
               <p className="text-sm leading-5 text-[var(--text-secondary)]">{item}</p>

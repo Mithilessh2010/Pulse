@@ -6,6 +6,7 @@ import {
   Bell,
   Bot,
   BriefcaseBusiness,
+  CalendarClock,
   CheckCircle2,
   ChevronDown,
   Command,
@@ -13,6 +14,7 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  MessageSquare,
   Moon,
   MoreHorizontal,
   Palette,
@@ -34,7 +36,7 @@ import { Modal } from "@/components/app/Modal";
 import type { AuthUser } from "@/lib/auth";
 import { usePulseStore } from "@/stores/usePulseStore";
 
-type ControlModal = "Create Task" | "Invite Member" | "Start Huddle" | "Generate Report";
+type ControlModal = "New Message" | "Start Huddle" | "Schedule Meeting";
 
 const teamOptions = ["All teams", "Product", "Design", "Engineering", "Operations", "Finance"];
 
@@ -84,6 +86,10 @@ export function ManagerControlBar({ currentUser, onOpenSidebar, onOpenPalette }:
   const inviteMember = usePulseStore((state) => state.inviteMember);
   const createCall = usePulseStore((state) => state.createCall);
   const generateReport = usePulseStore((state) => state.generateReport);
+  const sendChatMessage = usePulseStore((state) => state.sendChatMessage);
+  const sendDirectMessage = usePulseStore((state) => state.sendDirectMessage);
+  const scheduleMeeting = usePulseStore((state) => state.scheduleMeeting);
+  const chatRooms = usePulseStore((state) => state.chatRooms);
 
   const [command, setCommand] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -149,10 +155,20 @@ export function ManagerControlBar({ currentUser, onOpenSidebar, onOpenPalette }:
   }
 
   function saveModal() {
-    if (modal === "Create Task") createTask({ title: draftName || "Review priority workspace task", aiReview: draftNotes || "Created from the Manager Control Bar.", project: selectedTeam === "All teams" ? undefined : "Q3 Launch Review" });
-    if (modal === "Invite Member") inviteMember({ email: draftName.includes("@") ? draftName : undefined, team: selectedTeam === "All teams" ? draftNotes || "Product" : selectedTeam });
-    if (modal === "Start Huddle") createCall({ title: draftName || "Manager Huddle", relatedTeam: selectedTeam === "All teams" ? undefined : selectedTeam, reason: draftNotes || "Started from the Manager Control Bar.", status: "In progress", startedAt: "Now" });
-    if (modal === "Generate Report") generateReport(draftName || "Manager Control Report", draftNotes || "Executive");
+    if (modal === "New Message") {
+      const member = members.find((item) => item.id === draftName);
+      const room = chatRooms.find((item) => item.id === draftName);
+      if (member) { sendDirectMessage(member.id, draftNotes || `Hi ${member.name}, can we align on current priorities?`); router.push(`/app/chat?dm=${member.id}`); }
+      else if (room) { sendChatMessage(room.id, draftNotes || "Sharing a manager update with this room."); router.push(`/app/chat?room=${room.id}`); }
+    }
+    if (modal === "Start Huddle") {
+      const callId = createCall({ title: draftName || "Manager Huddle", relatedTeam: selectedTeam === "All teams" ? undefined : selectedTeam, reason: draftNotes || "Started from the Manager Control Bar.", status: "In progress", startedAt: "Now" });
+      router.push(`/app/calls?call=${callId}`);
+    }
+    if (modal === "Schedule Meeting") {
+      const meetingId = scheduleMeeting({ title: draftName || "Manager Check-in", participants: ["You", "Maya Chen", "Jordan Lee"], project: selectedTeam === "All teams" ? "Workspace" : selectedTeam, agenda: draftNotes || "Review priorities and assign next actions" });
+      router.push(`/app/meetings?meeting=${meetingId}`);
+    }
     setModal(null);
   }
 
@@ -168,11 +184,11 @@ export function ManagerControlBar({ currentUser, onOpenSidebar, onOpenPalette }:
   }
 
   const quickActions = [
-    { label: "New Task", tooltip: "Create task", Icon: Plus, action: () => openModal("Create Task") },
-    { label: "Invite", tooltip: "Invite member", Icon: UserPlus, action: () => openModal("Invite Member") },
+    { label: "Message", tooltip: "New message", Icon: MessageSquare, action: () => openModal("New Message") },
     { label: "Huddle", tooltip: "Start huddle", Icon: PhoneCall, action: () => openModal("Start Huddle") },
-    { label: "Report", tooltip: "Generate report", Icon: FileText, action: () => openModal("Generate Report") },
+    { label: "Meeting", tooltip: "Schedule meeting", Icon: CalendarClock, action: () => openModal("Schedule Meeting") },
     { label: "Approvals", tooltip: "Review approvals", Icon: CheckCircle2, action: () => router.push("/app/approvals") },
+    { label: "Ask Pulse", tooltip: "Ask Pulse", Icon: Sparkles, action: () => router.push("/app/ask") },
   ];
 
   return (
@@ -322,8 +338,8 @@ export function ManagerControlBar({ currentUser, onOpenSidebar, onOpenPalette }:
 
       <Modal open={Boolean(modal)} onClose={() => setModal(null)} title={modal ?? "Quick action"} description={`${selectedTeam} context · saved to demo workspace`} footer={<button onClick={saveModal} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--pulse-accent)] px-4 py-3 text-sm font-semibold text-white sm:ml-auto sm:w-auto"><CheckCircle2 className="h-4 w-4" />Save</button>}>
               <div className="space-y-3">
-                <input value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder={modal === "Invite Member" ? "teammate@acmeops.com" : `${modal} name`} className="h-11 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/60" />
-                <textarea value={draftNotes} onChange={(event) => setDraftNotes(event.target.value)} placeholder="Add context..." className="min-h-32 max-h-56 w-full resize-y overflow-y-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/60" />
+                {modal === "New Message" ? <label className="block text-sm text-[var(--text-secondary)]">Recipient or room<select aria-label="Message recipient" value={draftName} onChange={(event) => setDraftName(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 text-sm outline-none"><option value="">Select a conversation</option><optgroup label="People">{members.filter((member) => member.id !== "mithilessh").map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</optgroup><optgroup label="Work rooms">{chatRooms.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}</optgroup></select></label> : <input aria-label={`${modal} title`} value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder={`${modal} title`} className="h-11 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/60" />}
+                <textarea aria-label={modal === "New Message" ? "Message body" : "Action context"} value={draftNotes} onChange={(event) => setDraftNotes(event.target.value)} placeholder={modal === "New Message" ? "Write your message..." : modal === "Schedule Meeting" ? "Add an agenda..." : "Add context..."} className="min-h-32 max-h-56 w-full resize-y overflow-y-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/60" />
               </div>
       </Modal>
     </header>

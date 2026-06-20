@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { MeetingsScreen } from "@/components/app-shell/EnterpriseScreens";
+import { MeetingsHub } from "@/components/communication/MeetingsHub";
 
 export default function MeetingsPage() {
-  return <Suspense fallback={null}><MeetingsScreen /></Suspense>;
+  return <Suspense fallback={null}><MeetingsHub /></Suspense>;
 }

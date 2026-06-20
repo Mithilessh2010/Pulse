@@ -299,6 +299,7 @@ export function PlaybooksScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const playbooks = usePulseStore((state) => state.playbooks);
+  const createProject = usePulseStore((state) => state.createProject);
   const queryPlaybookId = searchParams.get("playbook");
   const [selectedPlaybookId, setSelectedPlaybookId] = useState(queryPlaybookId ?? playbooks[0]?.id);
   const [message, setMessage] = useState("");
@@ -313,13 +314,15 @@ export function PlaybooksScreen() {
     router.push(playbookHref(playbookId));
   }
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Playbooks" description="Reusable operating workflows for repeated work." action={<button onClick={() => setMessage("Pulse drafted a playbook from the completed Q3 Launch project.")} className={buttonClass}>Generate from project</button>} />{message ? <div className="mb-4"><DashboardCard title="Playbook generated"><p className="text-sm text-[var(--text-secondary)]">{message}</p></DashboardCard></div> : null}<div className="grid gap-4 lg:grid-cols-3">{playbooks.map((playbook) => <DashboardCard key={playbook.id} title={playbook.name} subtitle={`${playbook.ownerRole} · ${playbook.estimatedTime}`} className={selectedPlaybookId === playbook.id ? "ring-2 ring-[var(--accent)]/35" : ""}><button type="button" onClick={() => selectPlaybook(playbook.id)} className="mb-3 block w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40">{playbook.name}</button><p className="text-sm text-[var(--text-secondary)]">Required proof: {playbook.requiredProof}</p><div className="mt-3 space-y-2">{playbook.steps.map((step) => <div key={step} className="rounded-lg border border-[var(--border-subtle)] p-2 text-sm text-[var(--text-secondary)]">{step}</div>)}</div><button onClick={() => { selectPlaybook(playbook.id); setMessage(`${playbook.name} is ready to apply to a new project.`); }} className={`mt-4 ${buttonClass}`}>Run playbook</button></DashboardCard>)}</div></motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Playbooks" description="Reusable operating workflows for repeated work." action={<button onClick={() => setMessage("Pulse drafted a playbook from the completed Q3 Launch project.")} className={buttonClass}>Generate from project</button>} />{message ? <div className="mb-4"><DashboardCard title="Playbook action saved"><p className="text-sm text-[var(--text-secondary)]">{message}</p></DashboardCard></div> : null}<div className="grid gap-4 lg:grid-cols-3">{playbooks.map((playbook) => <DashboardCard key={playbook.id} title={playbook.name} subtitle={`${playbook.ownerRole} · ${playbook.estimatedTime}`} className={selectedPlaybookId === playbook.id ? "ring-2 ring-[var(--accent)]/35" : ""}><button type="button" onClick={() => selectPlaybook(playbook.id)} className="mb-3 block w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40">{playbook.name}</button><p className="text-sm text-[var(--text-secondary)]">Required proof: {playbook.requiredProof}</p><div className="mt-3 space-y-2">{playbook.steps.map((step) => <div key={step} className="rounded-lg border border-[var(--border-subtle)] p-2 text-sm text-[var(--text-secondary)]">{step}</div>)}</div><button onClick={() => { const projectId = createProject({ name: `${playbook.name} Project`, insight: `Created from ${playbook.name}. Steps: ${playbook.steps.join(", ")}` }); setMessage(`${playbook.name} created project ${projectId}. It is now available in Projects.`); }} className={`mt-4 ${buttonClass}`}>Run playbook</button></DashboardCard>)}</div></motion.div>;
 }
 
 export function ImportScreen() {
   const [ready, setReady] = useState(false);
   const [text, setText] = useState("");
   const [extracted, setExtracted] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const createTask = usePulseStore((state) => state.createTask);
   useEffect(() => setReady(true), []);
   const detected = [
     { label: "Task", title: "Review mobile dashboard layout", meta: "Owner Jordan · Due tomorrow", status: "Ready" },
@@ -367,6 +370,7 @@ export function ImportScreen() {
             <p className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{extracted ? detected.length : 0}</p>
             <p className="mt-1 text-sm text-[var(--text-muted)]">{extracted ? "items ready for manager review" : "items waiting for extraction"}</p>
           </div>
+          <button type="button" disabled={!extracted || accepted} onClick={() => { createTask({ title: detected[0].title, owner: "Jordan", project: "Mobile App Launch", due: "Tomorrow", dueDate: "Tomorrow", status: "In Progress", priority: "Medium", aiReview: "Accepted from Import review." }); setAccepted(true); }} className="mt-4 w-full rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{accepted ? "Imported task saved" : "Accept extracted task"}</button>
         </DashboardCard>
       </div>
     </motion.div>
