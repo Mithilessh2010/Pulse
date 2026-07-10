@@ -24,6 +24,7 @@ import {
   integrations,
   roles,
   type Approval,
+  type Expense,
   type Project,
   type Task,
 } from "@/lib/mockData";
@@ -73,6 +74,64 @@ function downloadWorkspaceFile(filename: string, content: string, type = "text/p
 
 function csvEscape(value: string | number) {
   return `"${String(value).replaceAll('"', '""')}"`;
+}
+
+function priorityRank(priority: string) {
+  return { High: 0, Medium: 1, Low: 2 }[priority as "High" | "Medium" | "Low"] ?? 3;
+}
+
+function sortTasksForReview(a: Task, b: Task) {
+  const statusRank: Record<Task["status"], number> = {
+    Blocked: 0,
+    "Due Today": 1,
+    "Waiting Approval": 2,
+    "In Progress": 3,
+    "My Tasks": 4,
+    Completed: 5,
+  };
+  const proofRank: Record<Task["proofStatus"], number> = {
+    Submitted: 0,
+    Waiting: 1,
+    Missing: 2,
+    Draft: 3,
+    Approved: 4,
+  };
+
+  return (
+    statusRank[a.status] - statusRank[b.status] ||
+    proofRank[a.proofStatus] - proofRank[b.proofStatus] ||
+    priorityRank(a.priority) - priorityRank(b.priority) ||
+    a.title.localeCompare(b.title)
+  );
+}
+
+function sortApprovalsForReview(a: Approval, b: Approval) {
+  const statusRank: Record<Approval["status"], number> = {
+    Waiting: 0,
+    "Changes Requested": 1,
+    Approved: 2,
+  };
+
+  return (
+    statusRank[a.status] - statusRank[b.status] ||
+    priorityRank(a.priority) - priorityRank(b.priority) ||
+    a.title.localeCompare(b.title)
+  );
+}
+
+function sortExpensesForReview(a: Expense, b: Expense) {
+  const statusRank: Record<Expense["status"], number> = {
+    "Needs Approval": 0,
+    Pending: 1,
+    Rejected: 2,
+    Approved: 3,
+  };
+
+  if (a.status === "Approved" && b.status === "Approved") {
+    return b.amountValue - a.amountValue || a.vendor.localeCompare(b.vendor);
+  }
+
+  return statusRank[a.status] - statusRank[b.status] || b.amountValue - a.amountValue || a.vendor.localeCompare(b.vendor);
 }
 
 function ProjectCard({ project, onView }: { project: Project; onView?: () => void }) {
@@ -419,7 +478,8 @@ export function TasksScreen() {
     .filter((task) => {
       const text = `${task.title} ${task.project} ${task.owner} ${task.priority}`.toLowerCase();
       return text.includes(search.toLowerCase());
-    });
+    })
+    .sort(sortTasksForReview);
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
@@ -428,7 +488,7 @@ export function TasksScreen() {
       <div className="mb-4 grid gap-3 md:grid-cols-3">
         <select value={priority} onChange={(event) => setPriority(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["All priorities", "High", "Medium", "Low"].map((item) => <option key={item}>{item}</option>)}</select>
         <select value={owner} onChange={(event) => setOwner(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["All owners", ...Array.from(new Set(tasks.map((task) => task.owner)))].map((item) => <option key={item}>{item}</option>)}</select>
-        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-muted)]"><SlidersHorizontal className="mr-2 inline h-4 w-4" />Sorted by urgency</div>
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-muted)]"><SlidersHorizontal className="mr-2 inline h-4 w-4" />Sorted by status and urgency</div>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <DashboardCard title="Task List" subtitle="Search and review active work"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks..." className="mb-3 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="space-y-2">{visible.length ? visible.map((task) => <TaskCard key={task.id} task={task} onClick={() => { setSelectedTaskId(task.id); setTaskDecision(task.proofStatus); }} />) : <EmptyState title="No tasks found" description="Try a different search or filter." />}</div></DashboardCard>
@@ -450,7 +510,8 @@ export function ApprovalsScreen() {
   const tabs = ["All", "Task Proof", "Expenses", "Client Updates"];
   const visible = (tab === "All" ? approvals : approvals.filter((a) => a.type === tab))
     .filter((approval) => statusFilter === "All statuses" || approval.status === statusFilter)
-    .filter((approval) => `${approval.title} ${approval.project} ${approval.submittedBy}`.toLowerCase().includes(search.toLowerCase()));
+    .filter((approval) => `${approval.title} ${approval.project} ${approval.submittedBy}`.toLowerCase().includes(search.toLowerCase()))
+    .sort(sortApprovalsForReview);
   const selectedApproval = approvals.find((approval) => approval.id === selectedApprovalId) ?? visible[0] ?? approvals[0];
   const waiting = approvals.filter((approval) => approval.status === "Waiting");
   const oldestPending = waiting[waiting.length - 1]?.time ?? "None";
@@ -476,7 +537,7 @@ export function ExpensesScreen() {
   const [showSubmit, setShowSubmit] = useState(false);
   const [exportNotice, setExportNotice] = useState("");
 
-  const visibleExpenses = expenseRows.filter((expense) => tab === "All" || expense.status === tab);
+  const visibleExpenses = expenseRows.filter((expense) => tab === "All" || expense.status === tab).sort(sortExpensesForReview);
   const approvedTotal = expenseRows.filter((expense) => expense.status === "Approved").reduce((sum, expense) => sum + expense.amountValue, 0);
 
   function downloadExpenseCsv() {
