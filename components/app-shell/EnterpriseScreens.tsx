@@ -192,11 +192,80 @@ export function CallsScreen() {
 
 export function MeetingsScreen() {
   const meetings = usePulseStore((state) => state.meetings);
+  const createCall = usePulseStore((state) => state.createCall);
   const generateMeetingAgenda = usePulseStore((state) => state.generateMeetingAgenda);
   const createMeetingFollowUpTasks = usePulseStore((state) => state.createMeetingFollowUpTasks);
   const markMeetingNotesComplete = usePulseStore((state) => state.markMeetingNotesComplete);
   const [meetingNotice, setMeetingNotice] = useState("");
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Meeting Hub" description="Run fewer, better meetings with agendas, decisions, notes, and follow-up tasks." action={<a href="/app/calls" className={infoButtonClass}>Open Calls & Huddles</a>} /><div className="grid gap-4 lg:grid-cols-2">{meetings.map((meeting) => <DashboardCard key={meeting.id} title={meeting.title} subtitle={`${meeting.project} · ${meeting.duration}`}><p className="text-sm leading-6 text-[var(--text-secondary)]">{meeting.why}</p><div className="mt-3 space-y-2">{(meeting.generatedAgenda ?? meeting.agenda).map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-sm text-[var(--text-secondary)]">{item}</div>)}</div><div className="mt-3 flex flex-wrap gap-2">{meeting.notesComplete ? <StatusBadge label="Notes complete" /> : null}{meeting.followUpTaskIds?.length ? <StatusBadge label={`${meeting.followUpTaskIds.length} follow-up tasks`} /> : null}</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => { generateMeetingAgenda(meeting.id); setMeetingNotice(`${meeting.title}: agenda generated and saved.`); }} className={infoButtonClass}>Generate agenda</button><button type="button" onClick={() => { createMeetingFollowUpTasks(meeting.id); setMeetingNotice(`${meeting.title}: follow-up task created and saved.`); }} className={successButtonClass}>Create follow-up tasks</button><button type="button" onClick={() => { markMeetingNotesComplete(meeting.id); setMeetingNotice(`${meeting.title}: notes marked complete.`); }} className={successButtonClass}>Mark notes complete</button></div></DashboardCard>)}</div>{meetingNotice ? <div className="mt-4"><DashboardCard title="Meeting action saved"><p className="text-sm text-[var(--text-secondary)]">{meetingNotice}</p></DashboardCard></div> : null}</motion.div>;
+  const [selectedId, setSelectedId] = useState(meetings[0]?.id);
+  const [notesDraft, setNotesDraft] = useState("Decision:\nOwner:\nFollow-up:");
+  const selected = meetings.find((meeting) => meeting.id === selectedId) ?? meetings[0];
+
+  function startMeetingHuddle() {
+    if (!selected) return;
+    const callId = createCall({
+      title: selected.title,
+      participants: selected.participants,
+      relatedProject: selected.project,
+      reason: selected.why,
+      duration: selected.duration,
+      status: "In progress",
+      agenda: selected.generatedAgenda ?? selected.agenda,
+      notes: notesDraft.split("\n").filter(Boolean),
+      startedAt: new Date().toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+    });
+    setMeetingNotice(`${selected.title}: live huddle created. Open Calls to continue. (${callId})`);
+  }
+
+  return (
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <PageHeader title="Meeting Hub" description="Run fewer, better meetings with agendas, decisions, notes, and follow-up tasks." action={<a href="/app/calls" className={infoButtonClass}>Open Calls & Huddles</a>} />
+      {meetingNotice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{meetingNotice}</div> : null}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <DashboardCard title="Meeting Queue" subtitle="Select a meeting to prepare, run, or turn into follow-up work">
+          <div className="space-y-2">
+            {meetings.map((meeting) => (
+              <button key={meeting.id} type="button" onClick={() => setSelectedId(meeting.id)} className={`block w-full rounded-xl border p-3 text-left transition ${selected?.id === meeting.id ? "border-[var(--accent)]/50 bg-[var(--card-bg)]" : "border-[var(--border-subtle)] bg-[var(--card-bg)] hover:border-[var(--border-strong)]"}`}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">{meeting.title}</p>
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">{meeting.project} · {meeting.duration}</p>
+                  </div>
+                  {meeting.notesComplete ? <StatusBadge label="Notes complete" /> : <StatusBadge label="Needs notes" />}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">{meeting.why}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">{meeting.followUpTaskIds?.length ? <StatusBadge label={`${meeting.followUpTaskIds.length} follow-up tasks`} /> : null}</div>
+              </button>
+            ))}
+          </div>
+        </DashboardCard>
+        {selected ? (
+          <DashboardCard title="Meeting Workspace" subtitle={`${selected.project} · ${selected.duration}`}>
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{selected.title}</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{selected.why}</p>
+              <div className="mt-3 flex flex-wrap gap-2">{selected.participants.map((person) => <span key={person} className="rounded-md border border-[var(--border-subtle)] px-2 py-1 text-xs text-[var(--text-muted)]">{person}</span>)}</div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Agenda</p>
+              {(selected.generatedAgenda ?? selected.agenda).map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-sm text-[var(--text-secondary)]">{item}</div>)}
+            </div>
+            <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              Meeting notes
+              <textarea value={notesDraft} onChange={(event) => setNotesDraft(event.target.value)} className="mt-2 min-h-[130px] w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm normal-case tracking-normal text-[var(--text-primary)] outline-none" />
+            </label>
+            {selected.followUpTaskIds?.length ? <div className="mt-4 rounded-xl border border-[#4ADE80]/20 bg-[#4ADE80]/10 p-3"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Follow-up tasks</p><div className="mt-2 space-y-2">{selected.followUpTaskIds.map((taskId) => <a key={taskId} href="/app/tasks" className="block rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs text-[var(--text-secondary)] hover:border-[var(--border-strong)]">{taskId} · Open in Tasks</a>)}</div></div> : null}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => { generateMeetingAgenda(selected.id); setMeetingNotice(`${selected.title}: agenda generated and saved.`); }} className={infoButtonClass}>Generate agenda</button>
+              <button type="button" onClick={() => { createMeetingFollowUpTasks(selected.id); setMeetingNotice(`${selected.title}: follow-up task created and saved.`); }} className={successButtonClass}>Create follow-up tasks</button>
+              <button type="button" onClick={() => { markMeetingNotesComplete(selected.id); setMeetingNotice(`${selected.title}: notes marked complete.`); }} className={successButtonClass}>Mark notes complete</button>
+              <button type="button" onClick={startMeetingHuddle} className={successButtonClass}>Start huddle</button>
+            </div>
+          </DashboardCard>
+        ) : null}
+      </div>
+    </motion.div>
+  );
 }
 
 export function TeamsScreen() {
@@ -226,9 +295,12 @@ export function PlaybooksScreen() {
 }
 
 export function ImportScreen() {
+  const createTask = usePulseStore((state) => state.createTask);
+  const addDecision = usePulseStore((state) => state.addDecision);
   const [ready, setReady] = useState(false);
   const [text, setText] = useState("");
   const [extracted, setExtracted] = useState(false);
+  const [saved, setSaved] = useState(false);
   useEffect(() => setReady(true), []);
   const detected = [
     { label: "Task", title: "Review mobile dashboard layout", meta: "Owner Jordan · Due tomorrow", status: "Ready" },
@@ -246,7 +318,10 @@ export function ImportScreen() {
               <div className="flex flex-wrap gap-2">
                 {["Tasks", "Blockers", "Approvals", "Decisions"].map((item) => <span key={item} className="rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)]">{item}</span>)}
               </div>
-              <button type="button" onClick={() => setExtracted(true)} disabled={!ready} className="pulse-button-success px-4 py-2.5 text-sm"><Wand2 className="h-4 w-4" />{ready ? "Extract with Pulse" : "Preparing import"}</button>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => { setExtracted(true); setSaved(false); }} disabled={!ready || !text.trim()} className="pulse-button-success px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-55"><Wand2 className="h-4 w-4" />{ready ? "Extract with Pulse" : "Preparing import"}</button>
+                {extracted ? <button type="button" onClick={() => { createTask({ title: detected[0].title, project: "Website Redesign", owner: "Jordan", status: "In Progress", priority: "High", proofRequired: true }); createTask({ title: detected[1].title, project: "Investor Update Deck", owner: "Finance", status: "Blocked", priority: "High", blocked: true }); addDecision({ title: detected[2].title, project: "Website Redesign", owner: "Maya", summary: "Imported approval item from pasted update.", status: "Active" }); setSaved(true); }} className="pulse-button-info px-4 py-2.5 text-sm">Save extracted items</button> : null}
+              </div>
             </div>
           </DashboardCard>
           <div className="grid gap-4 lg:grid-cols-3">
@@ -274,7 +349,7 @@ export function ImportScreen() {
           <div className="mt-4 rounded-2xl border border-[var(--accent)]/20 bg-[var(--card-bg)] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Review queue</p>
             <p className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{extracted ? detected.length : 0}</p>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">{extracted ? "items ready for manager review" : "items waiting for extraction"}</p>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">{saved ? "items saved to Tasks and Decisions" : extracted ? "items ready for manager review" : "items waiting for extraction"}</p>
           </div>
         </DashboardCard>
       </div>

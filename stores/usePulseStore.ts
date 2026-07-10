@@ -547,8 +547,8 @@ export const usePulseStore = create<PulseState>()(
       },
       updateTask: (taskId, updates) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, ...updates } : task), auditTrail: [`${nowLabel()} · Task updated: ${taskId}`, ...state.auditTrail] })),
       toggleSubtask: (taskId, subtaskId) => set((state) => ({ auditTrail: [`${nowLabel()} · Subtask checked: ${taskId}/${subtaskId}`, ...state.auditTrail] })),
-      submitTaskProof: (taskId, proofData = "Submitted proof") => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, proofStatus: "Submitted", proof: proofData } : task), activityFeed: [`Task proof submitted: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
-      completeTask: (taskId) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, status: "Completed" } : task), activityFeed: [`Task completed: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
+      submitTaskProof: (taskId, proofData = "Submitted proof") => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, status: "Waiting Approval", proofStatus: "Submitted", proof: proofData } : task), activityFeed: [`Task proof submitted: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
+      completeTask: (taskId) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, status: "Completed", proofStatus: "Approved", proof: task.proof === "Draft" ? "Completed without extra proof" : task.proof } : task), activityFeed: [`Task completed: ${state.tasks.find((task) => task.id === taskId)?.title ?? taskId}`, ...state.activityFeed] })),
       reassignTask: (taskId, newOwner) => set((state) => ({ tasks: state.tasks.map((task) => task.id === taskId ? { ...task, owner: newOwner } : task), auditTrail: [`${nowLabel()} · Task reassigned: ${taskId} to ${newOwner}`, ...state.auditTrail] })),
       createProject: (data = {}) => {
         const projectId = data.id ?? id("project");

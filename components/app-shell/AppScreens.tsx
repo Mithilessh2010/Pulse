@@ -17,7 +17,7 @@ import {
   Table2,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   askPulsePrompts,
   askPulseResponses,
@@ -470,6 +470,11 @@ export function TasksScreen() {
   const [search, setSearch] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState(tasks[1]?.id ?? tasks[0]?.id);
   const [taskDecision, setTaskDecision] = useState("Waiting Review");
+  const [proofPanelOpen, setProofPanelOpen] = useState(false);
+  const [proofType, setProofType] = useState("File");
+  const [proofFiles, setProofFiles] = useState<string[]>([]);
+  const [proofLink, setProofLink] = useState("");
+  const [proofNotes, setProofNotes] = useState("");
   const filters = ["Active", "All", "My Tasks", "Due Today", "Blocked", "Waiting Approval", "Completed"];
   const visible = tasks
     .filter((task) => {
@@ -487,6 +492,31 @@ export function TasksScreen() {
   const selectedTask = visible.find((task) => task.id === selectedTaskId) ?? visible[0];
   const selectedTaskResolved = selectedTask?.status === "Completed" || selectedTask?.proofStatus === "Approved";
 
+  function openProofPanel(type: string) {
+    setProofType(type);
+    setProofPanelOpen(true);
+  }
+
+  function onProofFilesChange(event: ChangeEvent<HTMLInputElement>) {
+    setProofFiles(Array.from(event.target.files ?? []).map((file) => `${file.name} (${Math.ceil(file.size / 1024)} KB)`));
+  }
+
+  function submitProofPacket() {
+    if (!selectedTask) return;
+    const packet = [
+      `${proofType} proof packet`,
+      proofFiles.length ? `Files: ${proofFiles.join(", ")}` : "",
+      proofLink.trim() ? `Link: ${proofLink.trim()}` : "",
+      proofNotes.trim() ? `Notes: ${proofNotes.trim()}` : "",
+    ].filter(Boolean).join(" | ");
+    submitTaskProof(selectedTask.id, packet);
+    setTaskDecision("Submitted");
+    setProofPanelOpen(false);
+    setProofFiles([]);
+    setProofLink("");
+    setProofNotes("");
+  }
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <PageHeader title="Tasks" description="Review priorities, proof status, due dates, owners, and task detail context." />
@@ -498,7 +528,48 @@ export function TasksScreen() {
       </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <DashboardCard title="Task List" subtitle="Search and review active work"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks..." className="mb-3 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="space-y-2">{visible.length ? visible.map((task) => <TaskCard key={task.id} task={task} onClick={() => { setSelectedTaskId(task.id); setTaskDecision(task.proofStatus); }} />) : <EmptyState title="No tasks found" description="Try a different search or filter." />}</div></DashboardCard>
-        {selectedTask ? <DashboardCard title="Task Detail" subtitle={selectedTaskResolved ? "Resolved task" : "Proof submission and review"}><div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{selectedTask.title}</p><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{selectedTask.project} · {selectedTask.owner} · {selectedTask.due}</p><div className="mt-3 flex flex-wrap gap-2"><StatusBadge label={selectedTask.priority} /><StatusBadge label={selectedTask.status} /><StatusBadge label={selectedTask.proofStatus} /></div></div><div className="mt-4 space-y-2">{selectedTask.subtasks.map((s) => <button type="button" key={s} onClick={() => updateTask(selectedTask.id, { comments: selectedTask.comments + 1 })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-left text-sm text-[var(--text-secondary)]"><Check className="h-4 w-4 text-emerald-300" />{s}</button>)}</div><div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">AI review: {selectedTask.aiReview}</div>{selectedTaskResolved ? <div className="mt-4 rounded-xl border border-[#4ADE80]/25 bg-[#4ADE80]/10 p-3 text-sm text-[var(--text-secondary)]">This task is resolved. It has moved out of the Active queue and can be viewed from Completed or All.</div> : <><div className="mt-4 flex flex-wrap gap-2">{["Link","File","Screenshot","Video"].map((chip) => <ActionButton key={chip} onClick={() => submitTaskProof(selectedTask.id, `${chip} proof submitted`)} className={infoButtonClass} doneLabel="Attached">{chip}</ActionButton>)}</div><div className="mt-4 flex flex-wrap gap-2"><ActionButton onClick={() => { completeTask(selectedTask.id); setTaskDecision("Approved"); }} className={successButtonClass} doneLabel="Completed">Complete task</ActionButton><ActionButton onClick={() => submitTaskProof(selectedTask.id)} className={successButtonClass} doneLabel="Submitted">Submit proof</ActionButton><ActionButton onClick={() => { updateTask(selectedTask.id, { proofStatus: "Missing", proof: "Changes Requested" }); setTaskDecision("Changes Requested"); }} className={warningButtonClass} doneLabel="Requested">Request Changes</ActionButton></div></>}</DashboardCard> : null}
+        {selectedTask ? (
+          <DashboardCard title="Task Detail" subtitle={selectedTaskResolved ? "Resolved task" : "Proof submission and review"}>
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{selectedTask.title}</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{selectedTask.project} · {selectedTask.owner} · {selectedTask.due}</p>
+              <div className="mt-3 flex flex-wrap gap-2"><StatusBadge label={selectedTask.priority} /><StatusBadge label={selectedTask.status} /><StatusBadge label={selectedTask.proofStatus} /></div>
+            </div>
+            <div className="mt-4 space-y-2">{selectedTask.subtasks.map((s) => <button type="button" key={s} onClick={() => updateTask(selectedTask.id, { comments: selectedTask.comments + 1 })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-left text-sm text-[var(--text-secondary)]"><Check className="h-4 w-4 text-emerald-300" />{s}</button>)}</div>
+            <div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">AI review: {selectedTask.aiReview}</div>
+            <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Current proof</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{selectedTask.proof}</p>
+            </div>
+            {selectedTaskResolved ? (
+              <div className="mt-4 rounded-xl border border-[#4ADE80]/25 bg-[#4ADE80]/10 p-3 text-sm text-[var(--text-secondary)]">This task is resolved. It has moved out of the Active queue and can be viewed from Completed or All.</div>
+            ) : (
+              <>
+                <div className="mt-4 flex flex-wrap gap-2">{["File", "Link", "Screenshot", "Video"].map((chip) => <button key={chip} type="button" onClick={() => openProofPanel(chip)} className={infoButtonClass}>{chip}</button>)}</div>
+                {proofPanelOpen ? (
+                  <div className="mt-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-raised-bg)] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">Submit {proofType.toLowerCase()} proof</p>
+                        <p className="mt-1 text-xs text-[var(--text-muted)]">Attach local files, add a link, and leave reviewer notes before sending this task into approval.</p>
+                      </div>
+                      <button type="button" onClick={() => setProofPanelOpen(false)} className="rounded-lg border border-[var(--border-subtle)] px-2 py-1 text-xs text-[var(--text-muted)]">Close</button>
+                    </div>
+                    <label className="mt-4 block rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--card-bg)] p-4 text-sm text-[var(--text-secondary)]">
+                      Upload files
+                      <input type="file" multiple accept={proofType === "Screenshot" ? "image/*" : proofType === "Video" ? "video/*" : undefined} onChange={onProofFilesChange} className="mt-3 block w-full text-xs text-[var(--text-muted)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white" />
+                    </label>
+                    {proofFiles.length ? <div className="mt-3 space-y-2">{proofFiles.map((file) => <div key={file} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs text-[var(--text-secondary)]">{file}</div>)}</div> : null}
+                    <input value={proofLink} onChange={(event) => setProofLink(event.target.value)} placeholder="Paste proof link, Figma, Loom, PR, Drive file..." className="mt-3 h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm text-[var(--text-primary)] outline-none" />
+                    <textarea value={proofNotes} onChange={(event) => setProofNotes(event.target.value)} placeholder="Notes for the reviewer..." className="mt-3 min-h-[86px] w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-primary)] outline-none" />
+                    <ActionButton onClick={submitProofPacket} className="pulse-button-success mt-3 w-full py-3 text-sm" doneLabel="Submitted">Submit proof packet</ActionButton>
+                  </div>
+                ) : null}
+                <div className="mt-4 flex flex-wrap gap-2"><ActionButton onClick={() => { completeTask(selectedTask.id); setTaskDecision("Approved"); }} className={successButtonClass} doneLabel="Completed">Complete task</ActionButton><ActionButton onClick={() => openProofPanel("File")} className={successButtonClass} doneLabel="Opened">Submit proof</ActionButton><ActionButton onClick={() => { updateTask(selectedTask.id, { proofStatus: "Missing", proof: "Changes Requested" }); setTaskDecision("Changes Requested"); }} className={warningButtonClass} doneLabel="Requested">Request Changes</ActionButton></div>
+              </>
+            )}
+          </DashboardCard>
+        ) : null}
       </div>
     </motion.div>
   );
