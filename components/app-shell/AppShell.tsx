@@ -276,7 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="text-xs text-[var(--text-muted)]">Owner</p>
           </div>
         </div>
-        <button onClick={logout} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs font-medium text-[var(--text-muted)] transition hover:text-[var(--pulse-text)] focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/50">
+        <button type="button" onClick={logout} className="pulse-button-secondary mt-4 w-full text-xs">
           <LogOut className="h-3.5 w-3.5" />
           Log out
         </button>
@@ -351,15 +351,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <input value={command} onChange={(event) => setCommand(event.target.value)} placeholder="Ask Pulse or search workspace..." className="h-10 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/70 focus:bg-[var(--card-raised-bg)]" />
                 </form>
                 <div className="relative flex items-center gap-2">
-                  <button aria-label="Open notifications" onClick={() => setNotificationOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)] transition hover:text-[var(--pulse-text)]">
+                    <button type="button" aria-label="Open notifications" onClick={() => setNotificationOpen((open) => !open)} className="pulse-button-secondary relative h-10 w-10 px-0 py-0">
                     <Bell className="h-4 w-4" />
                     {notifications.some((n) => n.unread) ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#00B4D8]" /> : null}
                   </button>
-                  <button aria-label="Cycle theme" onClick={cycleTheme} className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] text-[var(--text-muted)] transition hover:text-[var(--pulse-text)]">
+                  <button type="button" aria-label="Cycle theme" onClick={cycleTheme} className="pulse-button-secondary h-10 w-10 px-0 py-0">
                     {themeId === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </button>
                   <div className="relative">
-                    <button onClick={() => setCreateOpen((open) => !open)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--pulse-accent)] px-4 text-[13px] font-semibold text-white">
+                    <button type="button" onClick={() => setCreateOpen((open) => !open)} className="pulse-button-primary h-10 px-4 py-0">
                       <Plus className="h-4 w-4" />
                       Create
                     </button>
@@ -367,7 +367,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {createOpen ? (
                         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-[var(--border-subtle)] bg-[var(--pulse-panel)] p-2 shadow-2xl">
                           {(["Create Project", "Create Task", "Invite Member", "Create Team", "Submit Expense", "Generate Report"] as ModalKind[]).map((item) => (
-                            <button key={item} onClick={() => openCreate(item)} className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]">{item}</button>
+                            <button key={item} type="button" onClick={() => openCreate(item)} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]">{item}</button>
                           ))}
                         </motion.div>
                       ) : null}
@@ -413,7 +413,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
               <button aria-label="Close notifications" onClick={() => setNotificationOpen(false)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button>
             </div>
-            <button onClick={markAllNotificationsRead} className="mb-3 rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-secondary)]">Mark all read</button>
+            <button type="button" onClick={markAllNotificationsRead} className="pulse-button-secondary mb-3 text-xs">Mark all read</button>
             <div className="space-y-2">
               {notifications.map((item) => (
                 <div key={item.id} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
@@ -440,7 +440,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="space-y-3">
                 <label className="block text-sm text-[var(--text-secondary)]">Name<input className="mt-2 h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 outline-none focus:border-[var(--pulse-accent)]/60" placeholder={`${modalKind} name`} /></label>
                 <label className="block text-sm text-[var(--text-secondary)]">Notes<textarea className="mt-2 min-h-[92px] w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 outline-none focus:border-[var(--pulse-accent)]/60" placeholder="Add context..." /></label>
-                <button onClick={saveCreateDraft} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--pulse-accent)] px-4 py-3 text-sm font-semibold text-white"><CheckCircle2 className="h-4 w-4" />Save draft</button>
+                <button type="button" onClick={saveCreateDraft} className="pulse-button-success w-full py-3 text-sm"><CheckCircle2 className="h-4 w-4" />Save draft</button>
               </div>
             </motion.div>
           </motion.div>
@@ -453,7 +453,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <motion.div initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} className="mb-3 w-[min(360px,calc(100vw-40px))] rounded-[22px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-4 shadow-2xl backdrop-blur-xl">
               <div className="mb-3 flex items-center justify-between"><p className="text-sm font-semibold">Ask Pulse</p><button onClick={() => setFloatingOpen(false)} className="text-[var(--text-muted)]"><X className="h-4 w-4" /></button></div>
               <div className="flex flex-wrap gap-2">{["What needs attention?", "Who needs support?", "What is blocked?", "Write update"].map((chip) => <button key={chip} onClick={() => askMini(chip)} className="rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--pulse-text)]">{chip}</button>)}</div>
-              <form onSubmit={(event) => { event.preventDefault(); askMini(); }} className="mt-3 flex gap-2"><input value={miniPrompt} onChange={(event) => setMiniPrompt(event.target.value)} placeholder="Ask Pulse..." className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm outline-none" /><button type="submit" className="rounded-xl bg-[var(--pulse-accent)] px-3 text-sm font-semibold text-white">Ask</button></form>
+              <form onSubmit={(event) => { event.preventDefault(); askMini(); }} className="mt-3 flex gap-2"><input value={miniPrompt} onChange={(event) => setMiniPrompt(event.target.value)} placeholder="Ask Pulse..." className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 text-sm outline-none" /><button type="submit" className="pulse-button-success px-3 text-sm">Ask</button></form>
               <p className="mt-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-xs leading-5 text-[var(--text-secondary)]">{miniAnswer}</p>
             </motion.div>
           ) : null}

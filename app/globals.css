@@ -87,6 +87,95 @@ samp {
   -webkit-backdrop-filter: blur(16px);
 }
 
+@layer components {
+  .pulse-button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/50 disabled:cursor-not-allowed disabled:opacity-60;
+    background: #6d5dfb;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 8px 24px rgba(109, 93, 251, 0.18);
+  }
+
+  .pulse-button-primary:hover {
+    background: #7c6efc;
+  }
+
+  .pulse-button-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-medium transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/45 disabled:cursor-not-allowed disabled:opacity-60;
+    border-color: var(--border-subtle);
+    background: var(--card-bg);
+    color: var(--text-muted);
+  }
+
+  .pulse-button-secondary:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+
+  .pulse-button-chip {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/45 disabled:cursor-not-allowed disabled:opacity-60;
+    border-color: var(--border-subtle);
+    background: var(--card-bg);
+    color: var(--text-muted);
+  }
+
+  .pulse-button-chip:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+
+  .pulse-button-success {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/40 disabled:cursor-not-allowed disabled:opacity-60;
+    border-color: rgba(74, 222, 128, 0.32);
+    background: rgba(74, 222, 128, 0.14);
+    color: #bbf7d0;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  }
+
+  .pulse-button-success:hover {
+    border-color: rgba(74, 222, 128, 0.55);
+    background: rgba(74, 222, 128, 0.2);
+    color: #ecfdf5;
+  }
+
+  .pulse-button-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#F87171]/40 disabled:cursor-not-allowed disabled:opacity-60;
+    border-color: rgba(248, 113, 113, 0.34);
+    background: rgba(248, 113, 113, 0.12);
+    color: #fecaca;
+  }
+
+  .pulse-button-danger:hover {
+    border-color: rgba(248, 113, 113, 0.58);
+    background: rgba(248, 113, 113, 0.18);
+    color: #fff1f2;
+  }
+
+  .pulse-button-warning {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#FBBF24]/40 disabled:cursor-not-allowed disabled:opacity-60;
+    border-color: rgba(251, 191, 36, 0.32);
+    background: rgba(251, 191, 36, 0.12);
+    color: #fde68a;
+  }
+
+  .pulse-button-warning:hover {
+    border-color: rgba(251, 191, 36, 0.55);
+    background: rgba(251, 191, 36, 0.18);
+    color: #fffbeb;
+  }
+
+  .pulse-button-info {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#00B4D8]/40 disabled:cursor-not-allowed disabled:opacity-60;
+    border-color: rgba(0, 180, 216, 0.32);
+    background: rgba(0, 180, 216, 0.12);
+    color: #a5f3fc;
+  }
+
+  .pulse-button-info:hover {
+    border-color: rgba(0, 180, 216, 0.55);
+    background: rgba(0, 180, 216, 0.18);
+    color: #ecfeff;
+  }
+}
+
 /* Toned-down glows — roughly 40% less intense than before */
 .glow-purple {
   box-shadow: 0 0 24px rgba(109, 93, 251, 0.14), 0 0 48px rgba(109, 93, 251, 0.06);

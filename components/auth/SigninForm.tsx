@@ -50,6 +50,31 @@ export default function SigninForm() {
     }
   }
 
+  async function handleTempLogin() {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/temp-login", {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(typeof data.error === "string" ? data.error : "Temporary login is unavailable.");
+        return;
+      }
+
+      setSuccess("Temporary test session ready. Opening Pulse.");
+      router.push(typeof data.redirectTo === "string" ? data.redirectTo : "/app");
+    } catch {
+      setError("Temporary login is unavailable. Try again in a moment.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <>
       <SocialAuthOptions
@@ -83,6 +108,16 @@ export default function SigninForm() {
           Sign in
         </SubmitButton>
       </form>
+      {process.env.NODE_ENV !== "production" ? (
+        <button
+          type="button"
+          onClick={handleTempLogin}
+          disabled={loading}
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#C8D0E8] transition hover:border-[#6D5DFB]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Continue with temp test login
+        </button>
+      ) : null}
       <p className="mt-6 text-center text-sm text-[#6B7A9F]">
         New to Pulse?{" "}
         <Link href="/signup" className="font-medium text-[#8B7FFF] transition hover:text-white">
