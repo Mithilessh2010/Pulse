@@ -4,6 +4,8 @@ Pulse is an AI team operating system built for the messy middle of work: updates
 
 The idea is simple: instead of making a team jump between ten dashboards, Pulse gives them one command center where they can see what needs attention, ask for help, approve work, and turn scattered context into action.
 
+Claude Web was used to design the websites UI
+
 ## Screenshots
 
 ### Home
@@ -40,6 +42,7 @@ Pulse is designed around the kinds of things a real team checks every day:
 - A polished responsive UI for desktop and mobile
 
 This is still an early product build, but the core app experience is already there.
+
 ## License
 
 All rights reserved. See [LICENSE](LICENSE) for details.
