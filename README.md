@@ -40,59 +40,6 @@ Pulse is designed around the kinds of things a real team checks every day:
 - A polished responsive UI for desktop and mobile
 
 This is still an early product build, but the core app experience is already there.
-
-## Tech Stack
-
-- Next.js 14
-- React
-- TypeScript
-- Tailwind CSS
-- Zustand
-- MongoDB auth utilities
-- Vercel deployment
-
-## Getting Started
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run the development server:
-
-```bash
-npm run dev
-```
-
-Then open the local URL that Next prints in the terminal, usually:
-
-```text
-http://localhost:3000
-```
-
-Build for production:
-
-```bash
-npm run build
-```
-
-## Temp Test Login
-
-For local testing, the sign-in page includes a temp test login button. It creates a local development session so the app can be tested without going through the full auth flow every time.
-
-The temp login is disabled in production by default. To intentionally allow it in a production-like environment, set:
-
-```bash
-ENABLE_TEMP_LOGIN=true
-```
-
-Do not enable that on a real public production deployment.
-
-## Project Notes
-
-This repo is private product work, not an open-source starter. The UI, product direction, code, screenshots, and assets are part of Pulse.
-
 ## License
 
 All rights reserved. See [LICENSE](LICENSE) for details.
