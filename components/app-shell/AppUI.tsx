@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FileText, Info, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, FileText, Info, Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 export const containerVariants = {
@@ -80,6 +80,58 @@ export function LoadingSpinner({ label = "Loading" }: { label?: string }) {
       <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00B4D8]" />
       {label}
     </span>
+  );
+}
+
+export function ActionButton({
+  children,
+  className,
+  disabled,
+  doneLabel = "Saved",
+  onClick,
+  type = "button",
+}: {
+  children: React.ReactNode;
+  className: string;
+  disabled?: boolean;
+  doneLabel?: string;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  type?: "button" | "submit" | "reset";
+}) {
+  const [confirmed, setConfirmed] = useState(false);
+
+  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+    if (disabled) return;
+    setConfirmed(true);
+    window.setTimeout(() => onClick?.(event), 140);
+    window.setTimeout(() => setConfirmed(false), 900);
+  }
+
+  return (
+    <motion.button
+      type={type}
+      disabled={disabled}
+      onClick={handleClick}
+      whileTap={{ scale: 0.96 }}
+      className={`${className} ${confirmed ? "pulse-action-confirmed" : ""}`}
+    >
+      <motion.span
+        key={confirmed ? "confirmed" : "idle"}
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        className="inline-flex items-center gap-2"
+      >
+        {confirmed ? (
+          <>
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {doneLabel}
+          </>
+        ) : (
+          children
+        )}
+      </motion.span>
+    </motion.button>
   );
 }
 

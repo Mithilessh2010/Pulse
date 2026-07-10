@@ -21,6 +21,7 @@ import {
   MessageSquare,
   PhoneCall,
   Moon,
+  Paintbrush,
   Plus,
   ReceiptText,
   Search,
@@ -121,6 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [themePanelOpen, setThemePanelOpen] = useState(false);
   const [floatingOpen, setFloatingOpen] = useState(false);
   const [modalKind, setModalKind] = useState<ModalKind | null>(null);
   const themeId = usePulseStore((state) => state.selectedTheme);
@@ -151,6 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         setPaletteOpen(false);
         setNotificationOpen(false);
         setCreateOpen(false);
+        setThemePanelOpen(false);
         setFloatingOpen(false);
         setModalKind(null);
       }
@@ -209,6 +212,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   function openCreate(kind: ModalKind) {
     setModalKind(kind);
     setCreateOpen(false);
+    setThemePanelOpen(false);
   }
 
   function saveCreateDraft() {
@@ -219,6 +223,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (modalKind === "Submit Expense") submitExpense();
     if (modalKind === "Generate Report") generateReport();
     setModalKind(null);
+  }
+
+  function chooseTheme(nextThemeId: string) {
+    setSelectedTheme(nextThemeId);
+    setThemePanelOpen(false);
   }
 
   const SidebarHeader = (
@@ -355,9 +364,59 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <Bell className="h-4 w-4" />
                     {notifications.some((n) => n.unread) ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#00B4D8]" /> : null}
                   </button>
-                  <button type="button" aria-label="Cycle theme" onClick={cycleTheme} className="pulse-button-secondary h-10 w-10 px-0 py-0">
-                    {themeId === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  </button>
+                  <div className="relative">
+                    <button type="button" aria-label="Open theme dashboard" onClick={() => { setThemePanelOpen((open) => !open); setCreateOpen(false); }} className="pulse-button-secondary h-10 gap-2 px-3 py-0">
+                      {themeId === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                      <span className="hidden text-xs font-semibold sm:inline">Theme</span>
+                    </button>
+                    <AnimatePresence>
+                      {themePanelOpen ? (
+                        <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.98 }} className="absolute right-0 top-12 z-50 w-[min(360px,calc(100vw-32px))] rounded-2xl border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/98 p-3 shadow-2xl backdrop-blur-xl">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-[var(--text-primary)]">Theme dashboard</p>
+                              <p className="text-xs text-[var(--text-muted)]">Switch the whole workspace instantly.</p>
+                            </div>
+                            <Paintbrush className="h-4 w-4 text-[var(--accent-2)]" />
+                          </div>
+                          <div className="grid gap-2">
+                            {themes.map((item) => {
+                              const active = item.id === themeId;
+                              return (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => chooseTheme(item.id)}
+                                  className={`rounded-xl border p-3 text-left transition ${active ? "border-[var(--accent)]/60 bg-[var(--card-bg)] shadow-[0_16px_40px_rgba(0,0,0,0.18)]" : "border-[var(--border-subtle)] bg-[var(--card-bg)] hover:border-[var(--border-strong)]"}`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <p className="text-sm font-semibold text-[var(--text-primary)]">{item.name}</p>
+                                      <p className="mt-1 text-xs text-[var(--text-muted)]">{active ? "Active workspace theme" : "Preview and switch"}</p>
+                                    </div>
+                                    <div className="flex gap-1.5">
+                                      {[item.bg, item.panel, item.accent, item.accent2].map((swatch) => (
+                                        <span key={swatch} className="h-5 w-5 rounded-md border border-[var(--border-subtle)]" style={{ background: swatch }} />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 grid grid-cols-[1.1fr_0.9fr] gap-2 rounded-lg border border-[var(--border-subtle)] p-2" style={{ background: item.panel }}>
+                                    <span className="h-10 rounded-md" style={{ background: item.card }} />
+                                    <span className="grid gap-1.5">
+                                      <span className="h-2 rounded-full" style={{ background: item.accent }} />
+                                      <span className="h-2 rounded-full opacity-70" style={{ background: item.accent2 }} />
+                                      <span className="h-2 rounded-full opacity-50" style={{ background: item.borderStrong }} />
+                                    </span>
+                                  </div>
+                                  {active ? <span className="mt-2 inline-flex rounded-md border border-[var(--accent)]/30 bg-[var(--accent)]/15 px-2 py-1 text-[11px] font-semibold text-[var(--text-primary)]">Selected</span> : null}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
                   <div className="relative">
                     <button type="button" onClick={() => setCreateOpen((open) => !open)} className="pulse-button-primary h-10 px-4 py-0">
                       <Plus className="h-4 w-4" />
