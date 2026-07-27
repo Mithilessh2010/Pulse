@@ -43,6 +43,19 @@ Pulse is designed around the kinds of things a real team checks every day:
 
 This is still an early product build, but the core app experience is already there.
 
+## Run locally
+
+1. Install dependencies with `npm install`.
+2. Copy `.env.local.example` to `.env.local`.
+3. Set `JWT_SECRET` to a long random value. Add `MONGODB_URI` to enable account creation and email/password sign-in.
+4. Start the app with `npm run dev`, then open `http://localhost:3000`.
+
+The **Try the demo** button on `/signin` does not require MongoDB and is available by
+default so the product can be reviewed from a fresh clone. Set
+`ENABLE_DEMO_LOGIN=false` to disable it. Real account signup, verification, and sign-in
+require MongoDB; email delivery is optional in development because verification codes
+are printed in the server console when Resend is not configured.
+
 ## License
 
 All rights reserved. See [LICENSE](LICENSE) for details.

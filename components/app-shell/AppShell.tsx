@@ -101,7 +101,7 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/app/playbooks": { title: "Playbooks", subtitle: "Reusable operating systems for repeated team workflows" },
   "/app/import": { title: "Import Data", subtitle: "Paste messy updates and let Pulse structure the work" },
   "/app/onboarding": { title: "Onboarding", subtitle: "Set up teams, projects, members, and themes" },
-  "/app/settings": { title: "Settings", subtitle: "Enterprise controls, roles, integrations, AI, and theme" },
+  "/app/settings": { title: "Settings", subtitle: "Enterprise controls, roles, AI, and theme" },
   "/app/dev/qa": { title: "Pulse QA", subtitle: "Internal stabilization checklist and route audit notes" },
 };
 
@@ -179,9 +179,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     setSelectedTheme(themes[(currentIndex + 1) % themes.length].id);
   }
 
-  function logout() {
+  async function logout() {
     window.localStorage.removeItem("pulse-demo-session");
-    router.push("/");
+
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      router.push("/signin");
+      router.refresh();
+    }
   }
 
   function submitCommand(event: FormEvent<HTMLFormElement>) {

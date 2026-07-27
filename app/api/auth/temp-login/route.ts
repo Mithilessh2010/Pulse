@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { TEMP_TEST_EMAIL, TEMP_TEST_USER_ID, setSessionCookie } from "@/lib/auth";
+import { DEMO_USER_EMAIL, DEMO_USER_ID, setSessionCookie } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
 export async function POST() {
-  if (process.env.NODE_ENV === "production" && process.env.ENABLE_TEMP_LOGIN !== "true") {
-    return NextResponse.json({ error: "Temporary login is disabled." }, { status: 404 });
+  if (process.env.ENABLE_DEMO_LOGIN === "false") {
+    return NextResponse.json({ error: "Demo login is disabled." }, { status: 404 });
   }
 
   await setSessionCookie({
-    userId: TEMP_TEST_USER_ID,
-    email: TEMP_TEST_EMAIL,
+    userId: DEMO_USER_ID,
+    email: DEMO_USER_EMAIL,
     role: "owner",
   });
 

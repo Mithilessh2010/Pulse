@@ -8,12 +8,9 @@ import {
   Check,
   ClipboardCheck,
   Command,
-  Github,
   Kanban,
   Layers,
-  Link2,
   Receipt,
-  Slack,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -99,17 +96,6 @@ const comparisonRows = [
   ["Expenses", "Separate expense app", "Connected to projects and approvals"],
   ["Updates", "Manual standups", "AI-generated daily and weekly summaries"],
   ["Reporting", "Spreadsheets", "Live dashboard and export-ready insights"],
-];
-
-const integrations = [
-  "Slack",
-  "Microsoft Teams",
-  "GitHub",
-  "Google Calendar",
-  "Google Drive",
-  "Notion",
-  "QuickBooks",
-  "Jira",
 ];
 
 const containerVariants = {
@@ -467,32 +453,6 @@ export default function FeaturesPageContent() {
               </div>
             ))}
           </div>
-        </motion.div>
-      </section>
-
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-16 md:px-10">
-        <SectionHeader
-          title="Built to connect with the tools teams already use."
-          description="Pulse can start as your command center, then connect with the tools your team already uses as the product grows."
-        />
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          {integrations.map((integration) => (
-            <motion.div key={integration} variants={itemVariants} className="glass-raised flex items-center gap-3 rounded-2xl p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-[#8B7FFF]">
-                {integration === "Slack" ? <Slack className="h-5 w-5" /> : integration === "GitHub" ? <Github className="h-5 w-5" /> : <Link2 className="h-5 w-5" />}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[#F0F2F8]">{integration}</p>
-                <p className="mt-1 text-xs text-[#6B7A9F]">Roadmap integration</p>
-              </div>
-            </motion.div>
-          ))}
         </motion.div>
       </section>
 

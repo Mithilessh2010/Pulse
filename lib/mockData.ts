@@ -559,24 +559,6 @@ export const askPulseResponses: Record<string, string> = {
   "What changed since last week?": "Q3 Launch moved to 68%, Jordan completed the onboarding checklist, and Website Redesign became at risk after design approval slipped.",
 };
 
-export type Integration = {
-  name: string;
-  status: "Ready to connect" | "Not connected" | "Planned";
-  description: string;
-};
-
-export const integrations: Integration[] = [
-  { name: "Google Calendar", status: "Ready to connect", description: "Meetings, agendas, and follow-up ownership." },
-  { name: "GitHub", status: "Not connected", description: "Pull requests, code activity, and engineering proof." },
-  { name: "Slack", status: "Not connected", description: "Approvals, updates, and blocker alerts." },
-  { name: "Microsoft Teams", status: "Ready to connect", description: "Team conversations, meetings, and workspace context." },
-  { name: "Notion", status: "Not connected", description: "Docs, specs, and decision records." },
-  { name: "Jira", status: "Not connected", description: "Issues, sprints, and delivery state." },
-  { name: "Asana", status: "Planned", description: "Tasks and project timelines." },
-  { name: "QuickBooks", status: "Planned", description: "Expense and budget reconciliation." },
-  { name: "Xero", status: "Planned", description: "Finance and accounting sync." },
-];
-
 export const notifications = ["Maya submitted proof for review", "Website Redesign moved to At Risk", "AWS estimate needs finance approval", "Weekly leadership update is ready"];
 
 export const teamWorkload = teamMembers.map((member) => ({

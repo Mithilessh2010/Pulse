@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthField from "@/components/auth/AuthField";
 import AuthMessage from "@/components/auth/AuthMessage";
-import SocialAuthOptions from "@/components/auth/SocialAuthOptions";
 import SubmitButton from "@/components/auth/SubmitButton";
 
 export default function SigninForm() {
@@ -50,7 +49,7 @@ export default function SigninForm() {
     }
   }
 
-  async function handleTempLogin() {
+  async function handleDemoLogin() {
     setError("");
     setSuccess("");
     setLoading(true);
@@ -62,14 +61,14 @@ export default function SigninForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(typeof data.error === "string" ? data.error : "Temporary login is unavailable.");
+        setError(typeof data.error === "string" ? data.error : "Demo login is unavailable.");
         return;
       }
 
-      setSuccess("Temporary test session ready. Opening Pulse.");
+      setSuccess("Demo session ready. Opening Pulse.");
       router.push(typeof data.redirectTo === "string" ? data.redirectTo : "/app");
     } catch {
-      setError("Temporary login is unavailable. Try again in a moment.");
+      setError("Demo login is unavailable. Try again in a moment.");
     } finally {
       setLoading(false);
     }
@@ -77,12 +76,6 @@ export default function SigninForm() {
 
   return (
     <>
-      <SocialAuthOptions
-        onUnavailable={(message) => {
-          setSuccess("");
-          setError(message);
-        }}
-      />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthField
           label="Email"
@@ -108,16 +101,14 @@ export default function SigninForm() {
           Sign in
         </SubmitButton>
       </form>
-      {process.env.NODE_ENV !== "production" ? (
-        <button
-          type="button"
-          onClick={handleTempLogin}
-          disabled={loading}
-          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#C8D0E8] transition hover:border-[#6D5DFB]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Continue with temp test login
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={handleDemoLogin}
+        disabled={loading}
+        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#C8D0E8] transition hover:border-[#6D5DFB]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Try the demo
+      </button>
       <p className="mt-6 text-center text-sm text-[#6B7A9F]">
         New to Pulse?{" "}
         <Link href="/signup" className="font-medium text-[#8B7FFF] transition hover:text-white">

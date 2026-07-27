@@ -21,7 +21,6 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   askPulsePrompts,
   askPulseResponses,
-  integrations,
   roles,
   type Approval,
   type Expense,
@@ -761,7 +760,7 @@ export function SettingsScreen() {
   const toggleSettingAction = usePulseStore((state) => state.toggleSetting);
   const updateSettings = usePulseStore((state) => state.updateSettings);
   const setSelectedTheme = usePulseStore((state) => state.setSelectedTheme);
-  const tabs = ["General", "Members", "Teams", "Roles", "Notifications", "Integrations", "Billing", "Security", "AI Assistant", "Appearance", "Sample Data"];
+  const tabs = ["General", "Members", "Teams", "Roles", "Notifications", "Billing", "Security", "AI Assistant", "Appearance", "Sample Data"];
   const [ready, setReady] = useState(false);
   const [activeTab, setActiveTab] = useState("General");
   const [settingsNotice, setSettingsNotice] = useState("");
@@ -897,14 +896,6 @@ export function SettingsScreen() {
           {activeTab === "Notifications" ? (
             <DashboardCard title="Notifications" subtitle="Choose which operating signals Pulse sends">
               <div className="grid gap-3 md:grid-cols-2">{["Daily briefing", "Approval reminders", "Budget alerts", "Blocker alerts", "Weekly reports", "Team support alerts"].map((item) => <ToggleRow key={item} label={item} />)}</div>
-            </DashboardCard>
-          ) : null}
-
-          {activeTab === "Integrations" ? (
-            <DashboardCard title="Integrations" subtitle="Connect the systems your team already uses">
-              <div className="grid gap-3 md:grid-cols-3">
-                {integrations.map((item) => <div key={item.name} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4"><div className="flex items-start justify-between gap-3"><p className="font-semibold text-[var(--text-primary)]">{item.name}</p><StatusBadge label={item.status} /></div><p className="mt-3 min-h-10 text-sm leading-5 text-[var(--text-muted)]">{item.description}</p><button type="button" onClick={() => setSettingsNotice(`${item.name} setup added to the workspace checklist.`)} className={`mt-4 ${infoButtonClass}`}>Prepare setup</button></div>)}
-              </div>
             </DashboardCard>
           ) : null}
 

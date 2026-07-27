@@ -71,7 +71,7 @@ const plans = [
       "Budget vs actual tracking",
       "Weekly leadership reports",
       "Advanced team capacity",
-      "Planned integrations access",
+      "Workspace administration",
     ],
   },
   {
@@ -80,7 +80,7 @@ const plans = [
     monthly: "Custom",
     yearly: "Custom",
     suffix: "",
-    subtitle: "For companies that need controls, integrations, and scale.",
+    subtitle: "For companies that need controls, support, and scale.",
     cta: "Contact sales",
     featured: false,
     features: [
@@ -91,7 +91,7 @@ const plans = [
       "Priority support",
       "SSO-ready architecture later",
       "Custom onboarding",
-      "Integration support",
+      "Migration support",
       "Security review support",
     ],
   },
@@ -120,7 +120,6 @@ const comparisonRows = [
   ["Expense tracking", false, false, true, true],
   ["Budget tracking", false, false, true, true],
   ["Reports", "Basic", "Basic", "Weekly leadership", "Advanced"],
-  ["Integrations", false, false, "Planned access", "Integration support"],
   ["Custom permissions", false, false, false, true],
   ["Priority support", false, false, false, true],
 ];
@@ -134,11 +133,7 @@ const faqs = [
   ["Is billing per user?", "Yes. Paid plans are priced per active workspace user."],
   [
     "Can Pulse replace all of our tools immediately?",
-    "Pulse is designed to reduce tool switching by combining projects, approvals, workload, expenses, and reporting. Some integrations and advanced replacement workflows may be added over time.",
-  ],
-  [
-    "Are integrations included?",
-    "Basic planned integrations are included in the Team plan. Some advanced integrations may be part of Business later.",
+    "Pulse is designed to reduce tool switching by combining projects, approvals, workload, expenses, and reporting in one workspace.",
   ],
   [
     "Is this pricing final?",

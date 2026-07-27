@@ -5,8 +5,8 @@ import { ObjectId } from "mongodb";
 import { getUsersCollection } from "@/lib/mongodb";
 
 export const SESSION_COOKIE_NAME = "pulse_session";
-export const TEMP_TEST_USER_ID = "64f000000000000000000001";
-export const TEMP_TEST_EMAIL = "tester@pulse.local";
+export const DEMO_USER_ID = "64f000000000000000000001";
+export const DEMO_USER_EMAIL = "demo@pulse.local";
 
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7;
 
@@ -101,15 +101,14 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   }
 
   if (
-    process.env.NODE_ENV !== "production" &&
-    session.userId === TEMP_TEST_USER_ID &&
-    session.email === TEMP_TEST_EMAIL
+    session.userId === DEMO_USER_ID &&
+    session.email === DEMO_USER_EMAIL
   ) {
     return {
-      id: TEMP_TEST_USER_ID,
-      name: "Pulse Tester",
-      email: TEMP_TEST_EMAIL,
-      workspaceName: "Pulse Test Workspace",
+      id: DEMO_USER_ID,
+      name: "Demo User",
+      email: DEMO_USER_EMAIL,
+      workspaceName: "Pulse Demo Workspace",
       emailVerified: true,
       role: "owner",
     };

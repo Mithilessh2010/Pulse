@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import AuthField from "@/components/auth/AuthField";
 import AuthMessage from "@/components/auth/AuthMessage";
-import SocialAuthOptions from "@/components/auth/SocialAuthOptions";
 import SubmitButton from "@/components/auth/SubmitButton";
 
 export default function SignupForm() {
@@ -63,12 +62,6 @@ export default function SignupForm() {
 
   return (
     <>
-      <SocialAuthOptions
-        onUnavailable={(message) => {
-          setSuccess("");
-          setError(message);
-        }}
-      />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthField
           label="Full name"
