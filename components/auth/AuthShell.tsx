@@ -20,13 +20,13 @@ export default function AuthShell({
   footer,
 }: AuthShellProps) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#07090F] px-6 py-8 text-white">
+    <main className="relative min-h-screen overflow-hidden bg-[#0B0D0C] px-6 py-8 text-white">
       <div className="absolute inset-0 grid-bg opacity-35" />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 45% 35% at 22% 20%, rgba(109,93,251,0.14), transparent 70%), radial-gradient(ellipse 40% 34% at 78% 72%, rgba(0,180,216,0.1), transparent 70%)",
+            "radial-gradient(ellipse 45% 35% at 22% 20%, rgba(47,125,104,0.08), transparent 70%)",
         }}
       />
       <motion.div
@@ -52,24 +52,24 @@ export default function AuthShell({
 
         <section className="flex flex-1 items-center justify-center py-12">
           <motion.div
-            className="glass-raised glow-purple w-full max-w-[460px] rounded-2xl p-6 shadow-2xl sm:p-8"
+            className="w-full max-w-[460px] rounded-2xl border border-white/[0.08] bg-[#111412] p-6 sm:p-8"
             initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.55, ease: "easeOut" }}
           >
             <div className="mb-7">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#00B4D8]">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D5BC7A]">
                 {eyebrow}
               </p>
-              <h1 className="text-3xl font-bold tracking-[-0.02em] text-[#F0F2F8] sm:text-4xl">
+              <h1 className="text-3xl font-bold tracking-[-0.02em] text-[#F4F1EA] sm:text-4xl">
                 {title}
               </h1>
-              <p className="mt-3 text-sm leading-6 text-[#6B7A9F]">{description}</p>
+              <p className="mt-3 text-sm leading-6 text-[#737A74]">{description}</p>
             </div>
 
             {children}
 
-            {footer ? <div className="mt-6 text-center text-sm text-[#6B7A9F]">{footer}</div> : null}
+            {footer ? <div className="mt-6 text-center text-sm text-[#737A74]">{footer}</div> : null}
           </motion.div>
         </section>
       </div>

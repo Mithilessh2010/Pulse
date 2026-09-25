@@ -50,7 +50,7 @@ export default function TypingCommand({
 
   return (
     <span className={`inline-flex max-w-full items-center gap-1.5 overflow-hidden text-[12px] font-mono tracking-[-0.01em] ${className}`}>
-      <span className="shrink-0 text-[#6D5DFB]">&gt;</span>
+      <span className="shrink-0 text-[#2F7D68]">&gt;</span>
       <span aria-live="polite" className="min-w-0 truncate whitespace-nowrap text-[#D4DBEF]">
         {displayText}
       </span>

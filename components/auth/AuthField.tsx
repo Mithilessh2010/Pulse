@@ -25,7 +25,7 @@ export default function AuthField({
 }: AuthFieldProps) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[12px] font-medium text-[#9BA8C7]">{label}</span>
+      <span className="mb-2 block text-[12px] font-medium text-[#AEB4AF]">{label}</span>
       <div className="relative">
         <input
           name={name}
@@ -36,7 +36,7 @@ export default function AuthField({
           inputMode={inputMode}
           maxLength={maxLength}
           onChange={(event) => onChange(event.target.value)}
-          className={`h-11 w-full rounded-lg border border-white/10 bg-white/[0.035] px-3.5 text-sm text-[#F0F2F8] outline-none transition placeholder:text-[#3E4D68] focus:border-[#6D5DFB]/70 focus:bg-white/[0.055] focus:shadow-[0_0_0_3px_rgba(109,93,251,0.14)] ${
+          className={`h-11 w-full rounded-lg border border-white/10 bg-white/[0.035] px-3.5 text-sm text-[#F4F1EA] outline-none transition placeholder:text-[#3E4D68] focus:border-[#2F7D68]/70 focus:bg-white/[0.055] focus:shadow-[0_0_0_3px_rgba(47,125,104,0.14)] ${
             rightElement ? "pr-12" : ""
           }`}
         />

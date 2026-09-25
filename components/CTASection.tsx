@@ -1,90 +1,17 @@
-"use client";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
 export default function CTASection() {
   return (
-    <section className="relative py-28 overflow-hidden">
-      <div className="absolute inset-0 grid-bg opacity-25 pointer-events-none" />
-      {/* Very subtle, calm glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(109,93,251,0.09) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(109,93,251,0.2), transparent)" }}
-      />
-
-      <div className="relative max-w-[780px] mx-auto px-6 md:px-10 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col items-center gap-7"
-        >
-          {/* Headline — white, confident, no gradient */}
-          <h2 className="text-4xl md:text-5xl font-display font-semibold tracking-[-0.04em] leading-[1.02]" style={{ color: "#F0F2F8" }}>
-            One workspace for
-            <br />
-            <span style={{ color: "#6B7A9F", fontWeight: 400 }}>
-              the whole team.
-            </span>
-          </h2>
-
-          {/* Subtext — no fake numbers */}
-          <p className="text-base md:text-[17px] font-sans max-w-md leading-[1.7]" style={{ color: "#7F8BA6" }}>
-            Projects, approvals, expenses, and workload — in a single product built for teams that move fast.
-          </p>
-
-          {/* Buttons */}
-          <div className="flex flex-wrap gap-3 justify-center">
-            <motion.a
-              href="/signup"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-semibold text-white"
-              style={{
-                background: "linear-gradient(135deg, #00D4FF 0%, #6D5DFB 100%)",
-                boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 24px rgba(109,93,251,0.18)",
-              }}
-              whileHover={{ y: -1, scale: 1.015 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Request access
-              <ArrowRight size={14} />
-            </motion.a>
-            <motion.a
-              href="/demo"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-medium backdrop-blur-md"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "#C4CEDF",
-              }}
-              whileHover={{
-                y: -1,
-                border: "1px solid rgba(255,255,255,0.14)",
-                color: "#F0F2F8",
-                background: "rgba(255,255,255,0.05)",
-              }}
-              whileTap={{ scale: 0.98 }}
-            >
-              View demo
-            </motion.a>
-          </div>
-
-          {/* Clean trust line */}
-          <div className="flex flex-wrap justify-center gap-5 mt-1">
-            {["No credit card required", "5-minute setup", "Cancel anytime"].map((item) => (
-              <span key={item} className="text-[12px] font-mono" style={{ color: "#3D4F6F" }}>
-                {item}
-              </span>
-            ))}
-          </div>
-        </motion.div>
+    <section className="px-6 pb-24 pt-8 md:px-10">
+      <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 rounded-2xl border border-white/[0.08] bg-[#111412] p-7 md:flex-row md:items-center md:p-10">
+        <div className="max-w-2xl">
+          <h2 className="text-3xl font-semibold tracking-[-0.04em] text-[#F4F1EA] md:text-4xl">See if Pulse fits the way your team already works.</h2>
+          <p className="mt-3 text-sm leading-6 text-[#8E958F]">The live demo uses sample data and opens without an account.</p>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-3">
+          <a href="/demo" className="inline-flex items-center gap-2 rounded-lg bg-[#2F7D68] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#378B74]">Open demo <ArrowRight className="h-4 w-4" /></a>
+          <a href="/signup" className="inline-flex items-center rounded-lg border border-white/10 px-5 py-3 text-sm font-medium text-[#C8CCC7] transition hover:border-white/20 hover:text-white">Create workspace</a>
+        </div>
       </div>
     </section>
   );

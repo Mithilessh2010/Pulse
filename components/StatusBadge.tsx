@@ -6,7 +6,7 @@ type Status = "on-track" | "at-risk" | "available" | "near-capacity" | "pending"
 const statusConfig: Record<Status, { label: string; color: string; bg: string }> = {
   "on-track": { label: "On Track", color: "#31D67B", bg: "rgba(49,214,123,0.12)" },
   "at-risk": { label: "At Risk", color: "#FF5C7A", bg: "rgba(255,92,122,0.12)" },
-  available: { label: "Available", color: "#00D4FF", bg: "rgba(0,212,255,0.12)" },
+  available: { label: "Available", color: "#5BAA8A", bg: "rgba(0,212,255,0.12)" },
   "near-capacity": { label: "Near Capacity", color: "#F8C14A", bg: "rgba(248,193,74,0.12)" },
   pending: { label: "Pending", color: "#F8C14A", bg: "rgba(248,193,74,0.12)" },
   approved: { label: "Approved", color: "#31D67B", bg: "rgba(49,214,123,0.12)" },

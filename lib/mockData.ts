@@ -420,6 +420,7 @@ export type Approval = {
   aiNote: string;
   status: ApprovalStatus;
   auditTrail: string[];
+  changeRequest?: string;
 };
 
 export const approvals: Approval[] = [
@@ -566,7 +567,7 @@ export const teamWorkload = teamMembers.map((member) => ({
   initials: member.initials,
   status: member.status === "Near Capacity" ? ("near-capacity" as const) : member.status === "Available" ? ("available" as const) : ("on-track" as const),
   load: member.workloadCapacity,
-  color: member.status === "Near Capacity" ? "#6D5DFB" : member.status === "Available" ? "#34D399" : "#60A5FA",
+  color: member.status === "Near Capacity" ? "#2F7D68" : member.status === "Available" ? "#34D399" : "#D5BC7A",
 }));
 
 export const toolsReplaced = [
@@ -581,12 +582,12 @@ export const toolsReplaced = [
 ];
 
 export const features = [
-  { id: "pacing", icon: "TrendingUp", title: "AI Project Pacing", description: "Real-time pace tracking with risk signals. Know before deadlines slip, not after.", accent: "#6D5DFB" },
+  { id: "pacing", icon: "TrendingUp", title: "Project Pacing", description: "Real-time pace tracking with risk signals. Know before deadlines slip, not after.", accent: "#2F7D68" },
   { id: "approvals", icon: "CheckSquare", title: "Proof-Based Approvals", description: "Attach evidence to every approval. No more chasing context or paper trails.", accent: "#0EA5E9" },
   { id: "workload", icon: "Users", title: "Team Workload Visibility", description: "See who is at capacity before you assign. Balance the team with one glance.", accent: "#34D399" },
   { id: "expenses", icon: "CreditCard", title: "Expense Tracking", description: "Submit, approve, and audit expenses inside the same system your projects live in.", accent: "#FBBF24" },
   { id: "standups", icon: "Radio", title: "Daily Standups", description: "Async standups that surface blockers, decisions, and work that needs attention.", accent: "#F87171" },
-  { id: "ask", icon: "Sparkles", title: "Ask Pulse", description: "Ask anything about your team in plain English. Get answers, not dashboards.", accent: "#6D5DFB" },
+  { id: "ask", icon: "Sparkles", title: "Ask Pulse", description: "Ask anything about your team in plain English. Get answers, not dashboards.", accent: "#2F7D68" },
 ];
 
 export const enterprise = {

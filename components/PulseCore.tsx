@@ -9,7 +9,7 @@ export function PulseLogoMark({ size = 56 }: { size?: number }) {
       style={{
         width: size,
         height: size,
-        background: "linear-gradient(135deg, #6D5DFB 0%, #5546e8 100%)",
+        background: "linear-gradient(135deg, #2F7D68 0%, #5546e8 100%)",
         boxShadow: "0 0 0 1px rgba(109,93,251,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
       }}
       animate={{
@@ -47,7 +47,7 @@ export function NavPulseMark() {
   return (
     <div
       className="w-[28px] h-[28px] rounded-[7px] flex items-center justify-center shrink-0"
-      style={{ background: "#6D5DFB" }}
+      style={{ background: "#2F7D68" }}
     >
       <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
         <path

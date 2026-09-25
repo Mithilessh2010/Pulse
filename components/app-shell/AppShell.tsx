@@ -101,15 +101,15 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/app/playbooks": { title: "Playbooks", subtitle: "Reusable operating systems for repeated team workflows" },
   "/app/import": { title: "Import Data", subtitle: "Paste messy updates and let Pulse structure the work" },
   "/app/onboarding": { title: "Onboarding", subtitle: "Set up teams, projects, members, and themes" },
-  "/app/settings": { title: "Settings", subtitle: "Enterprise controls, roles, AI, and theme" },
+  "/app/settings": { title: "Settings", subtitle: "Workspace access, preferences, billing, and integrations" },
   "/app/dev/qa": { title: "Pulse QA", subtitle: "Internal stabilization checklist and route audit notes" },
 };
 
 const themes = [
-  { id: "midnight", name: "Midnight Pulse", bg: "#07090F", sidebar: "rgba(7,9,15,0.92)", panel: "#0A0F1C", card: "rgba(17,24,39,0.86)", cardSoft: "rgba(255,255,255,0.035)", text: "#F0F2F8", secondary: "#C8D0E8", muted: "#6B7A9F", border: "rgba(255,255,255,0.08)", borderStrong: "rgba(255,255,255,0.14)", accent: "#6D5DFB", accent2: "#00B4D8", success: "#4ADE80", warning: "#FBBF24", risk: "#F87171" },
-  { id: "graphite", name: "Graphite", bg: "#080808", sidebar: "rgba(8,8,8,0.94)", panel: "#111111", card: "rgba(24,24,27,0.88)", cardSoft: "rgba(255,255,255,0.045)", text: "#F5F5F5", secondary: "#D4D4D8", muted: "#A1A1AA", border: "rgba(255,255,255,0.10)", borderStrong: "rgba(255,255,255,0.18)", accent: "#60A5FA", accent2: "#A78BFA", success: "#34D399", warning: "#FBBF24", risk: "#FB7185" },
-  { id: "aurora", name: "Aurora", bg: "#061211", sidebar: "rgba(6,18,17,0.94)", panel: "#0B1B20", card: "rgba(11,27,32,0.88)", cardSoft: "rgba(20,184,166,0.075)", text: "#EFFDFB", secondary: "#C9F4EE", muted: "#7BA8A3", border: "rgba(148,255,235,0.12)", borderStrong: "rgba(148,255,235,0.22)", accent: "#14B8A6", accent2: "#8B5CF6", success: "#5EEAD4", warning: "#FACC15", risk: "#FB7185" },
-  { id: "light", name: "Light Executive", bg: "#F6F8FB", sidebar: "rgba(255,255,255,0.94)", panel: "#FFFFFF", card: "rgba(255,255,255,0.94)", cardSoft: "rgba(79,70,229,0.055)", text: "#111827", secondary: "#334155", muted: "#64748B", border: "rgba(15,23,42,0.12)", borderStrong: "rgba(15,23,42,0.20)", accent: "#4F46E5", accent2: "#0891B2", success: "#059669", warning: "#B45309", risk: "#DC2626" },
+  { id: "graphite", name: "Graphite & Moss", bg: "#0B0D0C", sidebar: "rgba(10,12,11,0.97)", panel: "#111412", card: "rgba(20,24,21,0.96)", cardSoft: "rgba(255,255,255,0.035)", text: "#F4F1EA", secondary: "#C8CCC7", muted: "#747B75", border: "rgba(255,255,255,0.075)", borderStrong: "rgba(255,255,255,0.14)", accent: "#2F7D68", accent2: "#D5BC7A", success: "#4B9B7C", warning: "#D5BC7A", risk: "#D77B73" },
+  { id: "paper", name: "Paper", bg: "#F3F1EA", sidebar: "rgba(246,244,238,0.98)", panel: "#FFFFFF", card: "rgba(255,255,255,0.98)", cardSoft: "rgba(35,50,42,0.045)", text: "#1C201D", secondary: "#404843", muted: "#737B75", border: "rgba(27,34,30,0.11)", borderStrong: "rgba(27,34,30,0.18)", accent: "#2F725F", accent2: "#9A783B", success: "#2F7D68", warning: "#A87622", risk: "#B34E48" },
+  { id: "slate", name: "Slate", bg: "#101214", sidebar: "rgba(14,16,18,0.97)", panel: "#15191C", card: "rgba(24,28,31,0.96)", cardSoft: "rgba(255,255,255,0.04)", text: "#F0F1EE", secondary: "#CDD0CC", muted: "#7F8580", border: "rgba(255,255,255,0.08)", borderStrong: "rgba(255,255,255,0.15)", accent: "#527A69", accent2: "#C1A56A", success: "#5C9C7E", warning: "#C1A56A", risk: "#CA7069" },
+  { id: "midnight", name: "Midnight", bg: "#0A0C10", sidebar: "rgba(9,11,15,0.97)", panel: "#10141A", card: "rgba(18,23,30,0.96)", cardSoft: "rgba(255,255,255,0.035)", text: "#F1F2EF", secondary: "#CBD0CC", muted: "#78817B", border: "rgba(255,255,255,0.075)", borderStrong: "rgba(255,255,255,0.14)", accent: "#3E7568", accent2: "#C7A86B", success: "#4D9B7D", warning: "#C7A86B", risk: "#C76D66" },
 ];
 
 type ModalKind = "Create Project" | "Create Task" | "Invite Member" | "Create Team" | "Submit Expense" | "Generate Report";
@@ -238,11 +238,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const SidebarHeader = (
     <div className="shrink-0 px-4 py-5">
-      <a href="/" className="flex items-center gap-3">
-        <PulseLogo />
-        <div>
+      <a href="/" className="flex items-center gap-2.5">
+        <PulseLogo compact />
+        <div className="min-w-0">
           <p className="text-[15px] font-semibold tracking-[-0.02em] text-[var(--pulse-text)]">Pulse</p>
-          <p className="text-xs text-[var(--text-muted)]">Enterprise operating system</p>
+          <p className="truncate text-[11px] text-[var(--text-muted)]">{enterprise.name}</p>
         </div>
       </a>
     </div>
@@ -263,7 +263,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     href={href}
                     onClick={() => setMobileOpen(false)}
                     whileHover={{ x: 3 }}
-                    className={`flex h-9 w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/50 ${
+                    className={`flex h-9 w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition focus:outline-none focus:ring-2 focus:ring-[#2F7D68]/50 ${
                       active ? "border border-[var(--pulse-accent)]/30 bg-white/[0.075] text-[var(--pulse-text)]" : "text-[var(--text-muted)] hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]"
                     }`}
                   >
@@ -280,28 +280,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   const SidebarFooter = (
-    <div className="shrink-0 border-t border-[var(--border-subtle)] p-4">
-      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4">
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--text-muted)]">Workspace</p>
-        <p className="mt-2 text-sm font-semibold text-[var(--pulse-text)]">{enterprise.name}</p>
-        <div className="mt-4 flex items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-sm font-semibold text-white">M</div>
-          <div>
-            <p className="text-sm font-medium text-[var(--pulse-text)]">{enterprise.owner}</p>
-            <p className="text-xs text-[var(--text-muted)]">Owner</p>
-          </div>
+    <div className="shrink-0 border-t border-[var(--border-subtle)] p-3">
+      <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--pulse-accent)] text-xs font-semibold text-white">M</div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium text-[var(--pulse-text)]">{enterprise.owner}</p>
+          <p className="text-[11px] text-[var(--text-muted)]">Workspace owner</p>
         </div>
-        <button type="button" onClick={logout} className="pulse-button-secondary mt-4 w-full text-xs">
-          <LogOut className="h-3.5 w-3.5" />
-          Log out
-        </button>
+        <button type="button" aria-label="Log out" onClick={logout} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--card-bg)] hover:text-[var(--pulse-text)]"><LogOut className="h-3.5 w-3.5" /></button>
       </div>
     </div>
   );
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden text-[var(--pulse-text)] transition-colors duration-300"
+      className="relative min-h-screen overflow-x-hidden text-[var(--pulse-text)] transition-colors duration-300"
       style={{
         "--pulse-bg": theme.bg,
         "--app-bg": theme.bg,
@@ -324,10 +317,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         background: theme.bg,
       } as CSSProperties}
     >
-      <div className="absolute inset-0 grid-bg opacity-20" />
-      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 52% 34% at 12% 8%, ${theme.accent}24, transparent 70%), radial-gradient(ellipse 42% 30% at 88% 16%, rgba(0,180,216,0.08), transparent 70%)` }} />
+      <div className="absolute inset-0 grid-bg opacity-[0.08]" />
+      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 52% 34% at 12% 8%, ${theme.accent}24, transparent 70%), radial-gradient(ellipse 42% 30% at 88% 16%, rgba(213,188,122,0.04), transparent 70%)` }} />
       <div className="relative z-10 flex">
-        <aside className="hidden h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl lg:sticky lg:top-0 lg:flex">
+        <aside className="hidden h-screen w-[248px] shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--sidebar-bg)] backdrop-blur-xl lg:sticky lg:top-0 lg:flex">
           {SidebarHeader}
           {SidebarNav}
           {SidebarFooter}
@@ -346,34 +339,31 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--app-bg)]/82 px-4 py-4 backdrop-blur-xl md:px-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: theme.accent }}>
-                  <button aria-label="Open sidebar" onClick={() => setMobileOpen(true)} className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] lg:hidden">
-                    <Menu className="h-4 w-4" />
-                  </button>
-                  <Command className="h-3.5 w-3.5" />
-                  Pulse
-                  <span className="rounded-md border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">Cmd K</span>
-                </p>
-                <h1 className="text-2xl font-bold tracking-[-0.02em] md:text-3xl">{meta.title}</h1>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">{meta.subtitle}</p>
+          <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--app-bg)]/92 px-4 py-3 backdrop-blur-xl md:px-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <button aria-label="Open sidebar" onClick={() => setMobileOpen(true)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] lg:hidden">
+                  <Menu className="h-4 w-4" />
+                </button>
+                <div className="min-w-0">
+                  <h1 className="truncate text-lg font-semibold tracking-[-0.02em] md:text-xl">{meta.title}</h1>
+                  <p className="mt-0.5 hidden truncate text-xs text-[var(--text-muted)] sm:block">{meta.subtitle}</p>
+                </div>
               </div>
-              <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                <form onSubmit={submitCommand} className="relative block md:w-[360px]">
+              <div className="flex shrink-0 items-center gap-2">
+                <form onSubmit={submitCommand} className="relative hidden md:block md:w-[300px]">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
                   <input value={command} onChange={(event) => setCommand(event.target.value)} placeholder="Ask Pulse or search workspace..." className="h-10 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--pulse-accent)]/70 focus:bg-[var(--card-raised-bg)]" />
                 </form>
                 <div className="relative flex items-center gap-2">
-                    <button type="button" aria-label="Open notifications" onClick={() => setNotificationOpen((open) => !open)} className="pulse-button-secondary relative h-10 w-10 px-0 py-0">
+                    <button type="button" aria-label="Open notifications" onClick={() => setNotificationOpen((open) => !open)} className="pulse-button-secondary relative hidden h-10 w-10 px-0 py-0 sm:inline-flex">
                     <Bell className="h-4 w-4" />
-                    {notifications.some((n) => n.unread) ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#00B4D8]" /> : null}
+                    {notifications.some((n) => n.unread) ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#D5BC7A]" /> : null}
                   </button>
-                  <div className="relative">
+                  <div className="relative hidden sm:block">
                     <button type="button" aria-label="Open theme dashboard" onClick={() => { setThemePanelOpen((open) => !open); setCreateOpen(false); }} className="pulse-button-secondary h-10 gap-2 px-3 py-0">
-                      {themeId === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                      <span className="hidden text-xs font-semibold sm:inline">Theme</span>
+                      {themeId === "paper" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                      
                     </button>
                     <AnimatePresence>
                       {themePanelOpen ? (
@@ -424,9 +414,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </AnimatePresence>
                   </div>
                   <div className="relative">
-                    <button type="button" onClick={() => setCreateOpen((open) => !open)} className="pulse-button-primary h-10 px-4 py-0">
+                    <button type="button" aria-label="Create" onClick={() => setCreateOpen((open) => !open)} className="pulse-button-primary h-10 w-10 px-0 py-0 sm:w-auto sm:px-4">
                       <Plus className="h-4 w-4" />
-                      Create
+                      <span className="hidden sm:inline">Create</span>
                     </button>
                     <AnimatePresence>
                       {createOpen ? (
@@ -438,14 +428,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                       ) : null}
                     </AnimatePresence>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.06] text-sm font-semibold ring-1 ring-white/10">M</div>
+                  <div className="hidden h-10 w-10 items-center justify-center rounded-lg bg-white/[0.06] text-sm font-semibold ring-1 ring-white/10 sm:flex">M</div>
                 </div>
               </div>
             </div>
           </header>
-          <div className="p-4 pb-24 md:p-6 md:pb-28">{children}</div>
+          <div className="mx-auto w-full max-w-[1480px] p-4 pb-28 md:p-5 md:pb-24">{children}</div>
         </div>
       </div>
+
+      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-[var(--border-strong)] bg-[var(--pulse-panel)]/96 p-1.5 shadow-2xl backdrop-blur-xl lg:hidden">
+        {[
+          ["Home", "/app", LayoutDashboard],
+          ["Projects", "/app/projects", FolderKanban],
+          ["Tasks", "/app/tasks", ListChecks],
+          ["Approvals", "/app/approvals", ClipboardCheck],
+        ].map(([label, href, Icon]) => {
+          const active = pathname === href;
+          const NavIcon = Icon as typeof LayoutDashboard;
+          return <a key={String(href)} href={String(href)} className={`flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium ${active ? "bg-[var(--card-bg)] text-[var(--pulse-text)]" : "text-[var(--text-muted)]"}`}><NavIcon className="h-4 w-4" />{String(label)}</a>;
+        })}
+        <button type="button" onClick={() => setMobileOpen(true)} className="flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium text-[var(--text-muted)]"><Menu className="h-4 w-4" />More</button>
+      </nav>
 
       <AnimatePresence>
         {paletteOpen ? (
@@ -484,7 +488,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div key={item.id} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{item.description}</p></div>
-                    {item.unread ? <span className="mt-1 h-2 w-2 rounded-full bg-[#00B4D8]" /> : null}
+                    {item.unread ? <span className="mt-1 h-2 w-2 rounded-full bg-[#D5BC7A]" /> : null}
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-muted)]"><span>{item.time}</span><button onClick={() => markNotificationRead(item.id)} className="text-[var(--text-secondary)]">{item.action}</button></div>
                 </div>
@@ -512,7 +516,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : null}
       </AnimatePresence>
 
-      <div className="fixed bottom-5 right-5 z-40">
+      <div className="fixed bottom-5 right-5 z-40 hidden lg:block">
         <AnimatePresence>
           {floatingOpen ? (
             <motion.div initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} className="mb-3 w-[min(360px,calc(100vw-40px))] rounded-[22px] border border-[var(--border-subtle)] bg-[var(--pulse-panel)]/96 p-4 shadow-2xl backdrop-blur-xl">

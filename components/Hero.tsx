@@ -42,7 +42,7 @@ export default function Hero() {
               style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.09)",
-                color: "#6B7A9F",
+                color: "#737A74",
                 letterSpacing: "0.03em",
               }}
             >
@@ -54,19 +54,19 @@ export default function Hero() {
           <motion.h1
             variants={itemVariants}
             className="text-5xl md:text-6xl lg:text-[64px] font-bold leading-[1.06] tracking-[-0.02em]"
-            style={{ color: "#F0F2F8" }}
+            style={{ color: "#F4F1EA" }}
           >
             Run your team
             <br />
             from one{" "}
-            <span style={{ color: "#8B7FFF" }}>place.</span>
+            <span style={{ color: "#D5BC7A" }}>place.</span>
           </motion.h1>
 
           {/* Subheadline */}
           <motion.p
             variants={itemVariants}
             className="text-base md:text-[17px] leading-relaxed max-w-md"
-            style={{ color: "#6B7A9F" }}
+            style={{ color: "#737A74" }}
           >
             Projects, approvals, expenses, workload, and blockers — unified in a single workspace your whole team will actually use.
           </motion.p>
@@ -77,10 +77,10 @@ export default function Hero() {
               href="/signup"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-semibold text-white"
               style={{
-                background: "#6D5DFB",
+                background: "#2F7D68",
                 boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 24px rgba(109,93,251,0.18)",
               }}
-              whileHover={{ background: "#7C6EFC", scale: 1.01 }}
+              whileHover={{ background: "#378B74", scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
               Request access
@@ -92,11 +92,11 @@ export default function Hero() {
               style={{
                 background: "transparent",
                 border: "1px solid rgba(255,255,255,0.08)",
-                color: "#9BA8C7",
+                color: "#AEB4AF",
               }}
               whileHover={{
                 border: "1px solid rgba(255,255,255,0.15)",
-                color: "#F0F2F8",
+                color: "#F4F1EA",
               }}
               whileTap={{ scale: 0.98 }}
             >

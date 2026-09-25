@@ -25,7 +25,7 @@ export default function LogoutButton() {
       type="button"
       onClick={logout}
       disabled={loading}
-      className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-[13px] font-medium text-[#9BA8C7] transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-[13px] font-medium text-[#AEB4AF] transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
     >
       <LogOut className="h-4 w-4" />
       {loading ? "Signing out" : "Sign out"}

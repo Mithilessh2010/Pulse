@@ -94,7 +94,7 @@ export default function SignupForm() {
               aria-label={showPassword ? "Hide password" : "Show password"}
               title={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((visible) => !visible)}
-              className="rounded-md p-1.5 text-[#6B7A9F] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/40"
+              className="rounded-md p-1.5 text-[#737A74] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#2F7D68]/40"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -114,7 +114,7 @@ export default function SignupForm() {
               aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"}
               title={showConfirmPassword ? "Hide password" : "Show password"}
               onClick={() => setShowConfirmPassword((visible) => !visible)}
-              className="rounded-md p-1.5 text-[#6B7A9F] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/40"
+              className="rounded-md p-1.5 text-[#737A74] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#2F7D68]/40"
             >
               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -134,9 +134,9 @@ export default function SignupForm() {
           Create account
         </SubmitButton>
       </form>
-      <p className="mt-6 text-center text-sm text-[#6B7A9F]">
+      <p className="mt-6 text-center text-sm text-[#737A74]">
         Already have an account?{" "}
-        <Link href="/signin" className="font-medium text-[#8B7FFF] transition hover:text-white">
+        <Link href="/signin" className="font-medium text-[#D5BC7A] transition hover:text-white">
           Sign in
         </Link>
       </p>

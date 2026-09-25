@@ -48,7 +48,7 @@ import {
 function priorityColor(priority: string) {
   if (priority === "High") return "#F87171";
   if (priority === "Medium") return "#FBBF24";
-  return "#00B4D8";
+  return "#D5BC7A";
 }
 
 const successButtonClass = "pulse-button-success text-xs";
@@ -147,7 +147,7 @@ function ProjectCard({ project, onView }: { project: Project; onView?: () => voi
         <span>Progress</span>
         <span>{project.progress}%</span>
       </div>
-      <ProgressBar value={project.progress} color={project.statusLabel === "At Risk" ? "#F87171" : "#6D5DFB"} />
+      <ProgressBar value={project.progress} color={project.statusLabel === "At Risk" ? "#F87171" : "#2F7D68"} />
       <div className="mt-3 flex flex-wrap gap-2">
         <RiskBadge label={project.deadlineRisk} />
         <RiskBadge label={project.budgetRisk} />
@@ -157,7 +157,7 @@ function ProjectCard({ project, onView }: { project: Project; onView?: () => voi
         <MetricPill label="Budget" value={project.budgetLabel} />
       </div>
       {onView ? (
-        <button type="button" onClick={onView} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/40 hover:text-[var(--text-primary)]">
+        <button type="button" onClick={onView} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[#2F7D68]/40 hover:text-[var(--text-primary)]">
           View details
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
@@ -168,7 +168,7 @@ function ProjectCard({ project, onView }: { project: Project; onView?: () => voi
 
 function TaskCard({ task, onClick }: { task: Task; onClick?: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[#6D5DFB]/35 hover:bg-[var(--card-bg)]">
+    <button type="button" onClick={onClick} className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[#2F7D68]/35 hover:bg-[var(--card-bg)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">{task.title}</p>
@@ -187,6 +187,7 @@ function TaskCard({ task, onClick }: { task: Task; onClick?: () => void }) {
 function ApprovalCard({ approval }: { approval: Approval }) {
   const approveApproval = usePulseStore((state) => state.approveApproval);
   const requestApprovalChanges = usePulseStore((state) => state.requestApprovalChanges);
+  const [feedback, setFeedback] = useState("");
   const statusLabel = approval.status === "Waiting" ? approval.type : approval.status;
 
   return (
@@ -204,25 +205,31 @@ function ApprovalCard({ approval }: { approval: Approval }) {
           <span key={chip} className="rounded-full border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-1.5 text-xs text-[var(--text-muted)]">{chip}</span>
         ))}
       </div>
-      <div className="mt-3 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">{approval.aiNote}</div>
+      <div className="mt-3 rounded-xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">{approval.aiNote}</div>
       <div className="mt-3 flex flex-wrap gap-2">{approval.auditTrail.map((event) => <span key={event} className="rounded-md border border-[var(--border-subtle)] bg-[var(--card-bg)] px-2 py-1 text-[11px] text-[var(--text-muted)]">{event}</span>)}</div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <ActionButton
-          onClick={() => approveApproval(approval.id)}
-          className={successButtonClass}
-          doneLabel="Approved"
-        >
-          <Check className="h-3.5 w-3.5" />
-          Approve
-        </ActionButton>
-        <ActionButton
-          onClick={() => requestApprovalChanges(approval.id)}
-          className={warningButtonClass}
-          doneLabel="Requested"
-        >
-          Request Changes
-        </ActionButton>
-      </div>
+      {approval.status === "Waiting" ? <textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="Add change feedback before requesting revisions…" className="mt-4 min-h-[74px] w-full resize-none rounded-lg border border-[var(--border-subtle)] bg-[var(--card-raised-bg)] p-3 text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]" /> : null}
+      {approval.status === "Waiting" ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <ActionButton
+            onClick={() => approveApproval(approval.id)}
+            className={successButtonClass}
+            doneLabel="Approved"
+          >
+            <Check className="h-3.5 w-3.5" />
+            Approve
+          </ActionButton>
+          <ActionButton
+            onClick={() => requestApprovalChanges(approval.id, feedback)}
+            disabled={!feedback.trim()}
+            className={warningButtonClass}
+            doneLabel="Requested"
+          >
+            Request Changes
+          </ActionButton>
+        </div>
+      ) : approval.changeRequest ? (
+        <p className="mt-3 border-l-2 border-[var(--warning)] pl-3 text-xs leading-5 text-[var(--text-muted)]">Feedback: {approval.changeRequest}</p>
+      ) : null}
     </div>
   );
 }
@@ -239,6 +246,7 @@ function AttachmentChip({ label }: { label: string }) {
 function ApprovalDetail({ approval }: { approval: Approval & { resolvedAt?: string } }) {
   const approveApproval = usePulseStore((state) => state.approveApproval);
   const requestApprovalChanges = usePulseStore((state) => state.requestApprovalChanges);
+  const [feedback, setFeedback] = useState("");
   const resolved = approval.status !== "Waiting";
 
   return (
@@ -287,9 +295,9 @@ function ApprovalDetail({ approval }: { approval: Approval & { resolvedAt?: stri
           <div className="mt-3 flex flex-wrap gap-2">{approval.auditTrail.map((event) => <span key={event} className="rounded-md border border-[var(--border-subtle)] px-2 py-1 text-[11px] text-[var(--text-muted)]">{event}</span>)}</div>
         </div>
       </div>
-      {resolved ? <div className="mt-4 rounded-xl border border-[#4ADE80]/25 bg-[#4ADE80]/10 p-3 text-sm text-[var(--text-secondary)]">This review is resolved. It now lives in the {approval.status} view.</div> : <div className="mt-4 flex flex-wrap gap-2">
-        <ActionButton onClick={() => approveApproval(approval.id)} className="pulse-button-success px-4 text-sm" doneLabel="Approved">Approve</ActionButton>
-        <ActionButton onClick={() => requestApprovalChanges(approval.id)} className="pulse-button-warning px-4 text-sm" doneLabel="Requested">Request Changes</ActionButton>
+      {resolved ? <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]"><p>This review is resolved. It now lives in the {approval.status} view.</p>{approval.changeRequest ? <p className="mt-2 border-l-2 border-[var(--warning)] pl-3 text-xs text-[var(--text-muted)]">Feedback: {approval.changeRequest}</p> : null}</div> : <div className="mt-4">
+        <label className="block text-xs font-medium text-[var(--text-secondary)]">Feedback for the submitter<textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="Be specific about what should change…" className="mt-2 min-h-[92px] w-full resize-none rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]" /></label>
+        <div className="mt-3 flex flex-wrap gap-2"><ActionButton onClick={() => approveApproval(approval.id)} className="pulse-button-success px-4 text-sm" doneLabel="Approved">Approve</ActionButton><ActionButton onClick={() => requestApprovalChanges(approval.id, feedback)} disabled={!feedback.trim()} className="pulse-button-warning px-4 text-sm" doneLabel="Requested">Request Changes</ActionButton></div>
       </div>}
     </DashboardCard>
   );
@@ -304,19 +312,15 @@ export function CommandCenterScreen() {
   const teamMembers = usePulseStore((state) => state.teamMembers);
   const activityFeed = usePulseStore((state) => state.activityFeed);
   const blockersRef = useRef<HTMLDivElement>(null);
-  const [briefingUpdate, setBriefingUpdate] = useState("");
   const [commandPrompt, setCommandPrompt] = useState("");
   const [commandAnswer, setCommandAnswer] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const pendingApprovals = approvals.filter((approval) => approval.status === "Waiting");
-  const approvalSummary = pendingApprovals.length
-    ? `${pendingApprovals.filter((approval) => approval.type === "Task Proof").length} task approvals · ${pendingApprovals.filter((approval) => approval.type === "Expenses").length} expense approvals · ${pendingApprovals.filter((approval) => approval.type === "Client Updates").length} client updates`
-    : "No approvals waiting.";
+  const dueToday = tasks.filter((task) => task.status === "Due Today");
+  const approvedSpend = expenses.filter((expense) => expense.status === "Approved").reduce((sum, expense) => sum + expense.amountValue, 0);
 
   function viewBlockers() {
     blockersRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    blockersRef.current?.classList.add("ring-2", "ring-red-400/40");
-    window.setTimeout(() => blockersRef.current?.classList.remove("ring-2", "ring-red-400/40"), 1400);
   }
 
   async function askCommand(prompt = commandPrompt) {
@@ -341,72 +345,80 @@ export function CommandCenterScreen() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4">
-      <div className="grid items-start gap-4 xl:grid-cols-4">
-      <DashboardCard title="AI Morning Briefing" subtitle="Priority signals across the workspace" className="xl:col-span-2">
-        <div className="rounded-xl border border-[#6D5DFB]/20 bg-[linear-gradient(135deg,rgba(109,93,251,0.15),rgba(0,180,216,0.08))] p-4">
-          <p className="text-[15px] leading-7 text-[var(--text-primary)]">Today: {tasks.filter((task) => task.status === "Due Today").length} tasks are due, {pendingApprovals.length} approvals are waiting, {blockers.length} blockers need attention, and Website Redesign is 3 days behind pace.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={viewBlockers} className="pulse-button-warning">View blockers</button>
-            <button type="button" onClick={() => setBriefingUpdate(askPulseResponses["Write a weekly leadership update"])} className="pulse-button-info">Generate update</button>
-            <a href="/app/ask" className="pulse-button-info">Ask Pulse</a>
+      <section className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--card-raised-bg)]">
+        <div className="grid grid-cols-2 divide-x divide-y divide-[var(--border-subtle)] sm:grid-cols-4 sm:divide-y-0">
+          {[
+            ["Due today", String(dueToday.length), "Open tasks"],
+            ["Waiting approval", String(pendingApprovals.length), "Needs review"],
+            ["Open blockers", String(blockers.length), "Needs an owner"],
+            ["Approved spend", `$${approvedSpend.toLocaleString()}`, "This workspace"],
+          ].map(([label, value, detail]) => (
+            <div key={label} className="p-4">
+              <p className="text-[11px] font-medium text-[var(--text-muted)]">{label}</p>
+              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">{value}</p>
+              <p className="mt-1 text-[11px] text-[var(--text-muted)]">{detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.8fr)]">
+        <DashboardCard title="Projects" subtitle="Delivery status across active work">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[620px] border-collapse text-left">
+              <thead><tr className="border-b border-[var(--border-subtle)] text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)]"><th className="pb-2 font-medium">Project</th><th className="pb-2 font-medium">Owner</th><th className="pb-2 font-medium">Progress</th><th className="pb-2 font-medium">Status</th><th className="pb-2 text-right font-medium">Due</th></tr></thead>
+              <tbody>
+                {projects.slice(0, 6).map((project) => (
+                  <tr key={project.id} className="border-b border-[var(--border-subtle)] last:border-0">
+                    <td className="py-3 pr-4"><p className="text-sm font-medium text-[var(--text-primary)]">{project.name}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">{project.completedTasks}/{project.tasks} tasks complete</p></td>
+                    <td className="py-3 pr-4 text-xs text-[var(--text-secondary)]">{project.owner}</td>
+                    <td className="w-[150px] py-3 pr-5"><div className="flex items-center gap-2"><div className="min-w-[84px] flex-1"><ProgressBar value={project.progress} color={project.statusLabel === "At Risk" ? "var(--risk)" : "var(--accent)"} /></div><span className="w-8 text-right text-[11px] text-[var(--text-muted)]">{project.progress}%</span></div></td>
+                    <td className="py-3 pr-4"><StatusBadge label={project.statusLabel} /></td>
+                    <td className="py-3 text-right text-xs text-[var(--text-muted)]">{project.due}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          {briefingUpdate ? <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[#07090F]/45 p-3 text-sm leading-6 text-[var(--text-secondary)]">{briefingUpdate}</div> : null}
-        </div>
-      </DashboardCard>
-      <DashboardCard title="Command Bar" subtitle="Ask Pulse what needs attention" className="xl:col-span-2">
-        <form onSubmit={(event) => { event.preventDefault(); askCommand(); }} className="flex flex-col gap-3 sm:flex-row">
-          <label className="relative min-w-0 flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-            <input value={commandPrompt} onChange={(event) => setCommandPrompt(event.target.value)} placeholder="Ask Pulse what needs attention..." className="h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/60" />
-          </label>
-          <button disabled={isAsking} className="pulse-button-success px-4 text-sm">Submit</button>
+          <a href="/app/projects" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-2)]">View all projects <ArrowRight className="h-3.5 w-3.5" /></a>
+        </DashboardCard>
+
+        <DashboardCard title="Needs attention" subtitle="Highest-priority work to clear next">
+          <div className="space-y-1">
+            {pendingApprovals.slice(0, 3).map((approval) => (
+              <a key={approval.id} href="/app/approvals" className="flex items-start gap-3 rounded-lg border border-transparent p-2.5 transition hover:border-[var(--border-subtle)] hover:bg-[var(--card-bg)]">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--warning)]" />
+                <span className="min-w-0"><span className="block truncate text-sm font-medium text-[var(--text-primary)]">{approval.title}</span><span className="mt-1 block text-[11px] text-[var(--text-muted)]">{approval.project} · {approval.priority}</span></span>
+              </a>
+            ))}
+            {blockers.slice(0, 2).map((blocker) => (
+              <button key={blocker.id} type="button" onClick={viewBlockers} className="flex w-full items-start gap-3 rounded-lg border border-transparent p-2.5 text-left transition hover:border-[var(--border-subtle)] hover:bg-[var(--card-bg)]">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--risk)]" />
+                <span className="min-w-0"><span className="block truncate text-sm font-medium text-[var(--text-primary)]">{blocker.title}</span><span className="mt-1 block text-[11px] text-[var(--text-muted)]">Owner {blocker.owner}</span></span>
+              </button>
+            ))}
+          </div>
+        </DashboardCard>
+      </div>
+
+      <DashboardCard title="Ask Pulse" subtitle="Use workspace data to answer a focused question">
+        <form onSubmit={(event) => { event.preventDefault(); askCommand(); }} className="flex flex-col gap-2 sm:flex-row">
+          <label className="relative min-w-0 flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" /><input value={commandPrompt} onChange={(event) => setCommandPrompt(event.target.value)} placeholder="What is at risk, who needs support, or what needs approval?" className="h-10 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]" /></label>
+          <button disabled={isAsking} className="pulse-button-primary h-10 px-4 text-sm">Ask</button>
         </form>
-        <div className="mt-3 flex flex-wrap gap-2">{["What is at risk?", "Who needs support?", "What needs approval?", "Write today's update"].map((prompt) => <button key={prompt} type="button" onClick={() => askCommand(prompt)} className="rounded-full border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-1.5 text-xs text-[var(--text-muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]">{prompt}</button>)}</div>
-        {isAsking ? <div className="mt-4"><LoadingSpinner label="Checking workspace context..." /></div> : null}
-        {commandAnswer && !isAsking ? <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">{commandAnswer}</motion.div> : null}
+        <div className="mt-2 flex flex-wrap gap-1.5">{["What is at risk?", "Who needs support?", "What needs approval?"].map((prompt) => <button key={prompt} type="button" onClick={() => askCommand(prompt)} className="rounded-md px-2.5 py-1.5 text-[11px] text-[var(--text-muted)] transition hover:bg-[var(--card-bg)] hover:text-[var(--text-primary)]">{prompt}</button>)}</div>
+        {isAsking ? <div className="mt-3"><LoadingSpinner label="Reading workspace context…" /></div> : null}
+        {commandAnswer && !isAsking ? <div className="mt-3 border-l-2 border-[var(--accent)] pl-3 text-sm leading-6 text-[var(--text-secondary)]">{commandAnswer}</div> : null}
       </DashboardCard>
-      </div>
-      <div className="grid items-start gap-4 xl:grid-cols-4">
-        <div className="grid gap-4 xl:col-span-2 xl:grid-cols-2">
-      <DashboardCard title="Company Health" subtitle="+6% from last week">
-        <p className="text-5xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">82%</p>
-        <div className="mt-3 flex items-center gap-2"><StatusBadge label="Stable" /><span className="text-xs text-emerald-300">+6%</span></div>
-        <p className="mt-4 text-xs leading-5 text-[var(--text-muted)]">Combines project health, blockers, approval queue pressure, and budget risk.</p>
-      </DashboardCard>
-      <DashboardCard title="Expenses/Budget" subtitle="Monthly workspace spend">
-        <p className="text-2xl font-semibold text-[var(--text-primary)]">${expenses.filter((expense) => expense.status === "Approved").reduce((sum, expense) => sum + expense.amountValue, 0).toLocaleString()} <span className="text-sm font-normal text-[var(--text-muted)]">of $7,500</span></p>
-        <div className="mt-3"><ProgressBar value={64} color="#FBBF24" /></div>
-        <p className="mt-3 text-sm text-[var(--text-secondary)]">64% used · {expenses.filter((expense) => expense.status !== "Approved").length} pending expenses · Software highest category</p>
-      </DashboardCard>
-        </div>
-      <DashboardCard title="Project Health" subtitle="Predicted finish and risk" className="xl:col-span-2">
-        <div className="max-h-[620px] space-y-3 overflow-y-auto pr-1">{projects.map((project) => <ProjectCard key={project.id} project={project} />)}</div>
-        <a href="/app/projects" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#00B4D8]">Open projects <ArrowRight className="h-4 w-4" /></a>
-      </DashboardCard>
-      </div>
-      <div className="grid items-start gap-4 xl:grid-cols-4">
-      <DashboardCard title="Approval Queue" subtitle={approvalSummary} className="xl:col-span-2">
-        {pendingApprovals.length ? <div className="grid gap-3 md:grid-cols-2">{pendingApprovals.slice(0, 4).map((approval) => <ApprovalCard key={approval.id} approval={approval} />)}</div> : <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center"><EmptyState title="Approval queue clear" description="There are no items waiting for review." /><a href="/app/approvals" className="pulse-button-info text-center text-xs">View approved history</a><a href="/app/tasks" className="pulse-button-success text-center text-xs">Go to Tasks</a></div>}
-      </DashboardCard>
-      <DashboardCard title="Team Workload Health" subtitle="Capacity, availability, and support needs">
-        <div className="mb-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          Workload estimate
-          <TooltipInfo text="Pulse estimates workload health from assigned tasks, deadlines, blockers, and meeting load. It is not a productivity score." />
-        </div>
-        <div className="space-y-4">{teamMembers.map((m) => <div key={m.id}><div className="mb-2 flex justify-between text-sm"><span className="text-[var(--text-primary)]">{m.shortName}</span><span className="text-[var(--text-secondary)]">{m.capacity}% · {m.availability}</span></div><ProgressBar value={m.capacity} color={m.status === "Near Capacity" ? "#F87171" : "#00B4D8"} /><p className="mt-1 text-xs text-[var(--text-muted)]">Focus load: {m.focusLoad} · Support: {m.supportNeeded ? "Yes" : "No"}</p></div>)}</div>
-      </DashboardCard>
-      <DashboardCard title="Blockers" subtitle="Items slowing active work" className="transition" >
-        <div ref={blockersRef} className="space-y-2 rounded-xl transition">
-          {blockers.map((b) => <div key={b.id} className="rounded-xl border border-red-400/15 bg-red-400/[0.06] p-3"><div className="flex gap-3 text-sm text-[var(--text-primary)]"><AlertTriangle className="h-4 w-4 shrink-0 text-[#F87171]" />{b.title}</div><p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">Owner {b.owner} · {b.impact}</p><p className="mt-1 text-xs leading-5 text-[#FBBF24]">Next: {b.suggestedNextAction}</p></div>)}
-        </div>
-      </DashboardCard>
-      </div>
-      <div className="grid items-start gap-4 xl:grid-cols-3">
-      <DashboardCard title="Tasks Due Today" subtitle="Work needing movement">
-        <div className="space-y-2">{tasks.slice(0, 5).map((task) => <TaskCard key={task.id} task={task} />)}</div>
-      </DashboardCard>
-      <AskPulseCard answer={askPulseResponses["What projects are at risk?"]} />
-      <ActivityFeed items={activityFeed} />
+
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        <DashboardCard title="Team capacity" subtitle="Workload signals, not productivity scores">
+          <div className="space-y-4">{teamMembers.slice(0, 5).map((member) => <div key={member.id}><div className="mb-1.5 flex justify-between text-xs"><span className="font-medium text-[var(--text-primary)]">{member.shortName}</span><span className="text-[var(--text-muted)]">{member.capacity}%</span></div><ProgressBar value={member.capacity} color={member.status === "Near Capacity" ? "var(--risk)" : "var(--accent)"} /></div>)}</div>
+        </DashboardCard>
+        <DashboardCard title="Blockers" subtitle="Clear these before they turn into schedule slips">
+          <div ref={blockersRef} className="space-y-2">{blockers.slice(0, 4).map((blocker) => <div key={blocker.id} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-sm font-medium text-[var(--text-primary)]">{blocker.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{blocker.suggestedNextAction}</p></div>)}</div>
+        </DashboardCard>
+        <ActivityFeed items={activityFeed.slice(0, 5)} />
       </div>
     </motion.div>
   );
@@ -435,10 +447,10 @@ export function ProjectsScreen() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <PageHeader title="Projects" description="Plan work, track health, and see predicted delivery across active initiatives." action={<button type="button" onClick={() => { const id = createProject(); setSelectedProjectId(id); setNotice("Project saved to the workspace."); }} className="pulse-button-success px-4 text-sm"><Plus className="h-4 w-4" />Create Project</button>} />
-      {notice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{notice}</div> : null}
-      <div className="mb-4 flex flex-wrap gap-2">{["Grid", "Kanban", "Timeline"].map((option) => <button key={option} type="button" onClick={() => setView(option)} className={`pulse-button-secondary text-sm ${view === option ? "border-[#6D5DFB]/50 bg-[#6D5DFB]/20 text-white" : ""}`}>{option}</button>)}</div>
+      {notice ? <div className="mb-4 rounded-xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-3 text-sm text-[var(--text-secondary)]">{notice}</div> : null}
+      <div className="mb-4 flex flex-wrap gap-2">{["Grid", "Kanban"].map((option) => <button key={option} type="button" onClick={() => setView(option)} className={`pulse-button-secondary text-sm ${view === option ? "border-[#2F7D68]/50 bg-[#2F7D68]/20 text-white" : ""}`}>{option}</button>)}</div>
       <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects or owners..." className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects or owners..." className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[#2F7D68]/50" />
         <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">
           {["All", "On Track", "At Risk", "Needs Review", "Blocked"].map((item) => <option key={item}>{item}</option>)}
         </select>
@@ -447,11 +459,11 @@ export function ProjectsScreen() {
         </select>
       </div>
       {view === "Grid" ? <div className="grid gap-4 lg:grid-cols-3">{filteredProjects.map((project) => <ProjectCard key={project.id} project={project} onView={() => setSelectedProjectId(project.id)} />)}</div> : null}
-      {view === "Kanban" ? <div className="grid gap-3 md:grid-cols-4">{["Planning","In Progress","Review","Done"].map((col) => <DashboardCard key={col} title={col} subtitle={`${projects.filter((p) => p.column === col).length} projects`}><div className="space-y-2">{projects.filter((p) => p.column === col).map((p) => <button type="button" onClick={() => setSelectedProjectId(p.id)} key={p.id} className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left text-xs text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/35"><span className="font-semibold text-[var(--text-primary)]">{p.name}</span><span className="mt-1 block">{p.progress}% · {p.health}</span></button>)}</div></DashboardCard>)}</div> : null}
-      {view === "Timeline" ? <DashboardCard title="Timeline" subtitle="Predicted finish against due date"><div className="space-y-4">{filteredProjects.map((project) => <div key={project.id}><div className="mb-2 flex justify-between text-sm"><span className="text-[var(--text-primary)]">{project.name}</span><span className="text-[var(--text-muted)]">Due {project.due} · Finish {project.predictedFinish}</span></div><div className="h-8 rounded-full border border-[var(--border-subtle)] bg-[var(--card-bg)] p-1"><motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(project.progress, 18)}%` }} className="h-full rounded-full bg-[linear-gradient(90deg,#6D5DFB,#00B4D8)]" /></div></div>)}</div></DashboardCard> : null}
+      {view === "Kanban" ? <div className="grid gap-3 md:grid-cols-4">{["Planning","In Progress","Review","Done"].map((col) => <DashboardCard key={col} title={col} subtitle={`${projects.filter((p) => p.column === col).length} projects`}><div className="space-y-2">{projects.filter((p) => p.column === col).map((p) => <button type="button" onClick={() => setSelectedProjectId(p.id)} key={p.id} className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left text-xs text-[var(--text-secondary)] transition hover:border-[#2F7D68]/35"><span className="font-semibold text-[var(--text-primary)]">{p.name}</span><span className="mt-1 block">{p.progress}% · {p.health}</span></button>)}</div></DashboardCard>)}</div> : null}
+      
       {!filteredProjects.length ? <EmptyState title="No projects found" description="Try another status, search term, or sort option." /> : null}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        {selectedProject ? <DashboardCard title="Project Detail" subtitle={`${selectedProject.name} pacing preview`}><ProjectCard project={selectedProject} /><p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">AI pacing insight: {selectedProject.insight}</p></DashboardCard> : null}
+        {selectedProject ? <DashboardCard title="Project Detail" subtitle={`${selectedProject.name} pacing preview`}><ProjectCard project={selectedProject} /><p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">Pacing note: {selectedProject.insight}</p></DashboardCard> : null}
         {selectedProject ? <DashboardCard title="Risk Breakdown" subtitle="Deadline, budget, blockers, and team context"><div className="grid gap-3 sm:grid-cols-2"><MetricPill label="Deadline risk" value={selectedProject.deadlineRisk} /><MetricPill label="Budget risk" value={selectedProject.budgetRisk} /><MetricPill label="Spend" value={selectedProject.spendLabel} /><MetricPill label="Blockers" value={String(selectedProject.blockersCount)} /></div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm leading-6 text-[var(--text-secondary)]">Owner {selectedProject.owner} · Team size {selectedProject.team} · {selectedProject.completedTasks}/{selectedProject.tasks} tasks complete</div></DashboardCard> : null}
       </div>
     </motion.div>
@@ -519,14 +531,14 @@ export function TasksScreen() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <PageHeader title="Tasks" description="Review priorities, proof status, due dates, owners, and task detail context." />
-      <div className="mb-4 flex flex-wrap gap-2">{filters.map((f) => <button key={f} onClick={() => setFilter(f)} className={`pulse-button-secondary text-sm ${filter === f ? "border-[#6D5DFB]/50 bg-[#6D5DFB]/20 text-white" : ""}`}><Filter className="h-3.5 w-3.5" />{f}</button>)}</div>
+      <div className="mb-4 flex flex-wrap gap-2">{filters.map((f) => <button key={f} onClick={() => setFilter(f)} className={`pulse-button-secondary text-sm ${filter === f ? "border-[#2F7D68]/50 bg-[#2F7D68]/20 text-white" : ""}`}><Filter className="h-3.5 w-3.5" />{f}</button>)}</div>
       <div className="mb-4 grid gap-3 md:grid-cols-3">
         <select value={priority} onChange={(event) => setPriority(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["All priorities", "High", "Medium", "Low"].map((item) => <option key={item}>{item}</option>)}</select>
         <select value={owner} onChange={(event) => setOwner(event.target.value)} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pulse-panel)] px-3 py-2 text-sm text-[var(--text-secondary)] outline-none">{["All owners", ...Array.from(new Set(tasks.map((task) => task.owner)))].map((item) => <option key={item}>{item}</option>)}</select>
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-muted)]"><SlidersHorizontal className="mr-2 inline h-4 w-4" />Sorted by status and urgency</div>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <DashboardCard title="Task List" subtitle="Search and review active work"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks..." className="mb-3 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="space-y-2">{visible.length ? visible.map((task) => <TaskCard key={task.id} task={task} onClick={() => { setSelectedTaskId(task.id); setTaskDecision(task.proofStatus); }} />) : <EmptyState title="No tasks found" description="Try a different search or filter." />}</div></DashboardCard>
+        <DashboardCard title="Task List" subtitle="Search and review active work"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks..." className="mb-3 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#2F7D68]/50" /><div className="space-y-2">{visible.length ? visible.map((task) => <TaskCard key={task.id} task={task} onClick={() => { setSelectedTaskId(task.id); setTaskDecision(task.proofStatus); }} />) : <EmptyState title="No tasks found" description="Try a different search or filter." />}</div></DashboardCard>
         {selectedTask ? (
           <DashboardCard title="Task Detail" subtitle={selectedTaskResolved ? "Resolved task" : "Proof submission and review"}>
             <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
@@ -535,7 +547,7 @@ export function TasksScreen() {
               <div className="mt-3 flex flex-wrap gap-2"><StatusBadge label={selectedTask.priority} /><StatusBadge label={selectedTask.status} /><StatusBadge label={selectedTask.proofStatus} /></div>
             </div>
             <div className="mt-4 space-y-2">{selectedTask.subtasks.map((s) => <button type="button" key={s} onClick={() => updateTask(selectedTask.id, { comments: selectedTask.comments + 1 })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 text-left text-sm text-[var(--text-secondary)]"><Check className="h-4 w-4 text-emerald-300" />{s}</button>)}</div>
-            <div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">AI review: {selectedTask.aiReview}</div>
+            <div className="mt-4 rounded-xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">AI review: {selectedTask.aiReview}</div>
             <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Current proof</p>
               <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{selectedTask.proof}</p>
@@ -655,7 +667,7 @@ export function ExpensesScreen() {
     setExportNotice("Budget brief downloaded.");
   }
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Expenses" description="Track spend, approve expenses, and keep budgets tied to project work." action={<button type="button" onClick={() => setShowSubmit(true)} className="pulse-button-success px-4 text-sm"><Plus className="h-4 w-4" />Submit expense</button>} />{exportNotice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{exportNotice}</div> : null}{showSubmit ? <div className="mb-4 rounded-2xl border border-[#6D5DFB]/25 bg-[#6D5DFB]/10 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[var(--text-primary)]">Submit expense</p><p className="mt-1 text-sm text-[var(--text-muted)]">Expense intake is ready for review workflows. The saved expense persists after refresh.</p><ActionButton onClick={() => { submitExpense(); setShowSubmit(false); }} className="pulse-button-success mt-3 text-xs" doneLabel="Saved">Save expense</ActionButton></div><button aria-label="Close submit expense panel" onClick={() => setShowSubmit(false)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button></div></div> : null}<div className="grid gap-4 lg:grid-cols-4"><MetricPill label="Budget used" value={`$${approvedTotal.toLocaleString()}`} /><MetricPill label="Budget total" value="$7,500" /><MetricPill label="Used" value="64%" /><MetricPill label="Needs action" value={String(expenseRows.filter((e) => e.status === "Pending" || e.status === "Needs Approval").length)} /></div><div className="mt-4 flex flex-wrap gap-2">{["Needs Action", "All", "Pending", "Needs Approval", "Approved", "Rejected"].map((item) => <button key={item} type="button" onClick={() => setTab(item)} className={`pulse-button-secondary text-sm ${tab === item ? "border-[#6D5DFB]/50 bg-[#6D5DFB]/20 text-white" : ""}`}>{item}</button>)}</div><div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]"><DashboardCard title={tab === "Needs Action" ? "Needs Action Queue" : "Expense Status View"} subtitle={tab === "Needs Action" ? "Approve or reject active expenses. Resolved items move out of this queue." : "Grouped expense history by status."}><div className="space-y-2">{visibleExpenses.length ? visibleExpenses.map((e) => <div key={e.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><div className="flex flex-wrap justify-between gap-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{e.vendor}</p><StatusBadge label={e.status} /></div><p className="mt-1 text-xs text-[var(--text-muted)]">{e.amount} · {e.category} · {e.submittedBy} · {e.project}</p><p className="mt-2 text-xs text-[var(--text-muted)]">Receipt: {e.receiptStatus} · Suggested category: {e.aiCategorySuggestion}</p>{e.status === "Pending" || e.status === "Needs Approval" ? <div className="mt-3 flex flex-wrap gap-2"><ActionButton onClick={() => approveExpense(e.id)} className={successButtonClass} doneLabel="Approved">Approve</ActionButton><ActionButton onClick={() => rejectExpense(e.id)} className={dangerButtonClass} doneLabel="Rejected">Reject</ActionButton></div> : <div className="mt-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-raised-bg)] px-3 py-2 text-xs text-[var(--text-muted)]">Resolved expense. View it from {e.status} or All.</div>}</div>) : <EmptyState title="Queue clear" description="Resolved items were moved into their status views." />}</div></DashboardCard><DashboardCard title="Budget and Categories" subtitle="Alerts, project spend, and exports"><StatusBadge label="Medium Risk" /><ProgressBar value={64} color="#FBBF24" /><p className="mt-3 text-sm text-[var(--text-secondary)]">$4,820 used of $7,500. Highest category: Software.</p><div className="mt-4 grid gap-2">{["Software", "Infrastructure", "Meals", "Design"].map((c) => <div key={c} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{c}</div>)}</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={downloadExpenseCsv} className={infoButtonClass}><Download className="h-3.5 w-3.5" />Download CSV</button><button type="button" onClick={downloadBudgetBrief} className={infoButtonClass}><Download className="h-3.5 w-3.5" />Download brief</button></div></DashboardCard></div></motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Expenses" description="Track spend, approve expenses, and keep budgets tied to project work." action={<button type="button" onClick={() => setShowSubmit(true)} className="pulse-button-success px-4 text-sm"><Plus className="h-4 w-4" />Submit expense</button>} />{exportNotice ? <div className="mb-4 rounded-xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-3 text-sm text-[var(--text-secondary)]">{exportNotice}</div> : null}{showSubmit ? <div className="mb-4 rounded-2xl border border-[#2F7D68]/25 bg-[#2F7D68]/10 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[var(--text-primary)]">Submit expense</p><p className="mt-1 text-sm text-[var(--text-muted)]">Expense intake is ready for review workflows. The saved expense persists after refresh.</p><ActionButton onClick={() => { submitExpense(); setShowSubmit(false); }} className="pulse-button-success mt-3 text-xs" doneLabel="Saved">Save expense</ActionButton></div><button aria-label="Close submit expense panel" onClick={() => setShowSubmit(false)} className="rounded-lg border border-[var(--border-subtle)] p-2 text-[var(--text-muted)]"><X className="h-4 w-4" /></button></div></div> : null}<div className="grid gap-4 lg:grid-cols-4"><MetricPill label="Budget used" value={`$${approvedTotal.toLocaleString()}`} /><MetricPill label="Budget total" value="$7,500" /><MetricPill label="Used" value="64%" /><MetricPill label="Needs action" value={String(expenseRows.filter((e) => e.status === "Pending" || e.status === "Needs Approval").length)} /></div><div className="mt-4 flex flex-wrap gap-2">{["Needs Action", "All", "Pending", "Needs Approval", "Approved", "Rejected"].map((item) => <button key={item} type="button" onClick={() => setTab(item)} className={`pulse-button-secondary text-sm ${tab === item ? "border-[#2F7D68]/50 bg-[#2F7D68]/20 text-white" : ""}`}>{item}</button>)}</div><div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]"><DashboardCard title={tab === "Needs Action" ? "Needs Action Queue" : "Expense Status View"} subtitle={tab === "Needs Action" ? "Approve or reject active expenses. Resolved items move out of this queue." : "Grouped expense history by status."}><div className="space-y-2">{visibleExpenses.length ? visibleExpenses.map((e) => <div key={e.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><div className="flex flex-wrap justify-between gap-3"><p className="text-sm font-semibold text-[var(--text-primary)]">{e.vendor}</p><StatusBadge label={e.status} /></div><p className="mt-1 text-xs text-[var(--text-muted)]">{e.amount} · {e.category} · {e.submittedBy} · {e.project}</p><p className="mt-2 text-xs text-[var(--text-muted)]">Receipt: {e.receiptStatus} · Suggested category: {e.aiCategorySuggestion}</p>{e.status === "Pending" || e.status === "Needs Approval" ? <div className="mt-3 flex flex-wrap gap-2"><ActionButton onClick={() => approveExpense(e.id)} className={successButtonClass} doneLabel="Approved">Approve</ActionButton><ActionButton onClick={() => rejectExpense(e.id)} className={dangerButtonClass} doneLabel="Rejected">Reject</ActionButton></div> : <div className="mt-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-raised-bg)] px-3 py-2 text-xs text-[var(--text-muted)]">Resolved expense. View it from {e.status} or All.</div>}</div>) : <EmptyState title="Queue clear" description="Resolved items were moved into their status views." />}</div></DashboardCard><DashboardCard title="Budget and Categories" subtitle="Alerts, project spend, and exports"><StatusBadge label="Medium Risk" /><ProgressBar value={64} color="#FBBF24" /><p className="mt-3 text-sm text-[var(--text-secondary)]">$4,820 used of $7,500. Highest category: Software.</p><div className="mt-4 grid gap-2">{["Software", "Infrastructure", "Meals", "Design"].map((c) => <div key={c} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{c}</div>)}</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={downloadExpenseCsv} className={infoButtonClass}><Download className="h-3.5 w-3.5" />Download CSV</button><button type="button" onClick={downloadBudgetBrief} className={infoButtonClass}><Download className="h-3.5 w-3.5" />Download brief</button></div></DashboardCard></div></motion.div>;
 }
 
 export function TeamScreen() {
@@ -663,7 +675,7 @@ export function TeamScreen() {
   const [selectedMemberId, setSelectedMemberId] = useState(teamMembers[0]?.id);
   const selectedMember = teamMembers.find((member) => member.id === selectedMemberId) ?? teamMembers[0];
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Team" description="Workload health, support needed, availability, and delivery confidence without surveillance." /><DashboardCard title="Workload philosophy" subtitle="How Pulse frames team visibility"><p className="text-sm leading-6 text-[var(--text-secondary)]">Pulse does not score people. It helps managers spot workload risk and support needs using tasks, deadlines, blockers, and capacity.</p><div className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">Workload Health <TooltipInfo text="Pulse estimates workload health from assigned tasks, deadlines, blockers, and meeting load. It is not a productivity score." /></div></DashboardCard><div className="mt-4 grid gap-4 lg:grid-cols-4">{teamMembers.map((m) => <DashboardCard key={m.id} title={m.name} subtitle={m.role}><button type="button" onClick={() => setSelectedMemberId(m.id)} className="mb-3 flex w-full items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[#6D5DFB]/35"><span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#6D5DFB] text-sm font-semibold text-white">{m.initials}</span><span><span className="block text-sm font-semibold text-[var(--text-primary)]">{m.shortName}</span><span className="text-xs text-[var(--text-muted)]">{m.availability}</span></span></button><div className="mb-3 flex items-center justify-between"><StatusBadge label={m.status} /><span className="text-sm text-[var(--text-secondary)]">{m.capacity}%</span></div><ProgressBar value={m.capacity} color={m.status === "Near Capacity" ? "#F87171" : "#00B4D8"} /><div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]"><p>Focus load: {m.focusLoad}</p><p>Support needed: {m.supportNeeded ? "Yes" : "No"}</p><p>Assigned tasks: {m.assignedTasks}</p><p>Blocked tasks: {m.blockedTasks}</p><p>Delivery confidence: {m.deliveryConfidence}</p></div></DashboardCard>)}</div>{selectedMember ? <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.9fr]"><DashboardCard title="Team Member Detail" subtitle={`${selectedMember.name} workload context`}><div className="grid gap-3 sm:grid-cols-2"><MetricPill label="Capacity" value={`${selectedMember.capacity}%`} /><MetricPill label="Availability" value={selectedMember.availability} /><MetricPill label="Completed this week" value={String(selectedMember.completedThisWeek)} /><MetricPill label="Blocked tasks" value={String(selectedMember.blockedTasks)} /></div><div className="mt-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">Suggested action: {selectedMember.suggestedAction}</div></DashboardCard><DashboardCard title="Capacity Recommendations" subtitle="Balancing support without surveillance"><div className="space-y-2">{["Move one task from Maya to Jordan", "Ask Alex whether design approval is blocked", "Sam needs finance numbers before Investor Update can continue"].map((action) => <div key={action} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">{action}</div>)}</div></DashboardCard></div> : null}</motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Team" description="Workload health, support needed, availability, and delivery confidence without surveillance." /><DashboardCard title="Workload philosophy" subtitle="How Pulse frames team visibility"><p className="text-sm leading-6 text-[var(--text-secondary)]">Pulse does not score people. It helps managers spot workload risk and support needs using tasks, deadlines, blockers, and capacity.</p><div className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">Workload Health <TooltipInfo text="Pulse estimates workload health from assigned tasks, deadlines, blockers, and meeting load. It is not a productivity score." /></div></DashboardCard><div className="mt-4 grid gap-4 lg:grid-cols-4">{teamMembers.map((m) => <DashboardCard key={m.id} title={m.name} subtitle={m.role}><button type="button" onClick={() => setSelectedMemberId(m.id)} className="mb-3 flex w-full items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[#2F7D68]/35"><span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2F7D68] text-sm font-semibold text-white">{m.initials}</span><span><span className="block text-sm font-semibold text-[var(--text-primary)]">{m.shortName}</span><span className="text-xs text-[var(--text-muted)]">{m.availability}</span></span></button><div className="mb-3 flex items-center justify-between"><StatusBadge label={m.status} /><span className="text-sm text-[var(--text-secondary)]">{m.capacity}%</span></div><ProgressBar value={m.capacity} color={m.status === "Near Capacity" ? "#F87171" : "#D5BC7A"} /><div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]"><p>Focus load: {m.focusLoad}</p><p>Support needed: {m.supportNeeded ? "Yes" : "No"}</p><p>Assigned tasks: {m.assignedTasks}</p><p>Blocked tasks: {m.blockedTasks}</p><p>Delivery confidence: {m.deliveryConfidence}</p></div></DashboardCard>)}</div>{selectedMember ? <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.9fr]"><DashboardCard title="Team Member Detail" subtitle={`${selectedMember.name} workload context`}><div className="grid gap-3 sm:grid-cols-2"><MetricPill label="Capacity" value={`${selectedMember.capacity}%`} /><MetricPill label="Availability" value={selectedMember.availability} /><MetricPill label="Completed this week" value={String(selectedMember.completedThisWeek)} /><MetricPill label="Blocked tasks" value={String(selectedMember.blockedTasks)} /></div><div className="mt-4 rounded-xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-3 text-sm leading-6 text-[var(--text-secondary)]">Suggested action: {selectedMember.suggestedAction}</div></DashboardCard><DashboardCard title="Capacity Recommendations" subtitle="Balancing support without surveillance"><div className="space-y-2">{["Move one task from Maya to Jordan", "Ask Alex whether design approval is blocked", "Sam needs finance numbers before Investor Update can continue"].map((action) => <div key={action} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">{action}</div>)}</div></DashboardCard></div> : null}</motion.div>;
 }
 
 export function AskScreen() {
@@ -701,7 +713,7 @@ export function AskScreen() {
     }
   }
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Ask Pulse" description="A premium command interface for questions about projects, tasks, approvals, workload, and spend." /><div className="grid gap-4 lg:grid-cols-[1fr_360px]"><DashboardCard title="Command Center Chat" subtitle="Answers are grounded in workspace context"><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Ask about blockers, workload, approvals, budget, or what to do next..." className="min-h-[130px] w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-lg text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#6D5DFB]/50" /><div className="mt-4 flex flex-wrap gap-2">{askPulsePrompts.map((p) => <button key={p} type="button" onClick={() => askPulse(p)} className={`pulse-button-secondary text-xs ${prompt === p ? "border-[#6D5DFB]/50 bg-[#6D5DFB]/20 text-white" : ""}`}>{p}</button>)}</div><div className="mt-4 flex flex-wrap items-center gap-2"><button type="button" onClick={() => askPulse()} disabled={isLoading} className="pulse-button-success px-4 text-sm">{isLoading ? "Generating answer..." : "Ask Pulse"}</button><button type="button" onClick={() => navigator.clipboard?.writeText(answer)} className={infoButtonClass}><Copy className="h-3.5 w-3.5" />Copy response</button><StatusBadge label={source === "openrouter" ? "Live AI" : source === "error" ? "Workspace answer" : "Workspace answer"} /></div><motion.div key={answer} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-4 text-sm leading-6 text-[var(--text-secondary)]">{isLoading ? <LoadingSpinner label="Reviewing projects, tasks, approvals, workload, and spend..." /> : answer}</motion.div><div className="mt-4 space-y-3">{history.slice(-4).map((item, index) => <div key={`${item.prompt}-${index}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold text-[var(--text-muted)]">{item.prompt}</p><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.answer}</p></div>)}</div></DashboardCard><DashboardCard title="Context Panel" subtitle="What Ask Pulse can read"><div className="grid gap-2">{["Projects","Tasks","Approvals","Expenses","Team workload","Reports"].map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{item}</div>)}</div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Suggested follow-ups</p><div className="mt-3 space-y-2">{["What should I do next?", "Which project needs an owner decision?", "Draft a client update."].map((item) => <button key={item} onClick={() => askPulse(item)} className={`${infoButtonClass} w-full justify-start text-left`}>{item}</button>)}</div></div></DashboardCard></div></motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Ask Pulse" description="A premium command interface for questions about projects, tasks, approvals, workload, and spend." /><div className="grid gap-4 lg:grid-cols-[1fr_360px]"><DashboardCard title="Command Center Chat" subtitle="Answers are grounded in workspace context"><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Ask about blockers, workload, approvals, budget, or what to do next..." className="min-h-[130px] w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 text-lg text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[#2F7D68]/50" /><div className="mt-4 flex flex-wrap gap-2">{askPulsePrompts.map((p) => <button key={p} type="button" onClick={() => askPulse(p)} className={`pulse-button-secondary text-xs ${prompt === p ? "border-[#2F7D68]/50 bg-[#2F7D68]/20 text-white" : ""}`}>{p}</button>)}</div><div className="mt-4 flex flex-wrap items-center gap-2"><button type="button" onClick={() => askPulse()} disabled={isLoading} className="pulse-button-success px-4 text-sm">{isLoading ? "Generating answer..." : "Ask Pulse"}</button><button type="button" onClick={() => navigator.clipboard?.writeText(answer)} className={infoButtonClass}><Copy className="h-3.5 w-3.5" />Copy response</button><StatusBadge label={source === "openrouter" ? "Live AI" : source === "error" ? "Workspace answer" : "Workspace answer"} /></div><motion.div key={answer} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-4 text-sm leading-6 text-[var(--text-secondary)]">{isLoading ? <LoadingSpinner label="Reviewing projects, tasks, approvals, workload, and spend..." /> : answer}</motion.div><div className="mt-4 space-y-3">{history.slice(-4).map((item, index) => <div key={`${item.prompt}-${index}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold text-[var(--text-muted)]">{item.prompt}</p><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.answer}</p></div>)}</div></DashboardCard><DashboardCard title="Context Panel" subtitle="What Ask Pulse can read"><div className="grid gap-2">{["Projects","Tasks","Approvals","Expenses","Team workload","Reports"].map((item) => <div key={item} className="rounded-lg border border-[var(--border-subtle)] p-3 text-sm text-[var(--text-secondary)]">{item}</div>)}</div><div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Suggested follow-ups</p><div className="mt-3 space-y-2">{["What should I do next?", "Which project needs an owner decision?", "Draft a client update."].map((item) => <button key={item} onClick={() => askPulse(item)} className={`${infoButtonClass} w-full justify-start text-left`}>{item}</button>)}</div></div></DashboardCard></div></motion.div>;
 }
 
 export function ReportsScreen() {
@@ -745,7 +757,7 @@ export function ReportsScreen() {
     setReportNotice(`${report} CSV downloaded.`);
   }
 
-  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Reports" description="Generate summaries and export-ready views from workspace activity." action={<button type="button" onClick={() => { generateReport(); setReportNotice("Workspace report generated and saved to history."); }} className="pulse-button-success px-4 text-sm">Generate report</button>} />{reportNotice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{reportNotice}</div> : null}<div className="grid gap-4 lg:grid-cols-3">{reports.map((report) => <DashboardCard key={report} title={report} subtitle={generated ? "Generated from current workspace data" : "Report template ready"}><p className="text-sm leading-6 text-[var(--text-secondary)]">{generated ? "Generated report is ready for review and export." : "Prepared from projects, approvals, workload, and expense data."}</p><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => downloadReportBrief(report)} className={infoButtonClass}><FileCheck className="h-3.5 w-3.5" />Download brief</button><button type="button" onClick={() => downloadReportCsv(report)} className={infoButtonClass}><Table2 className="h-3.5 w-3.5" />Download CSV</button></div></DashboardCard>)}</div><div className="mt-4 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]"><DashboardCard title="Leadership Update Draft" subtitle={generated ? generatedReports[0].title : "Weekly summary ready"}><p className="text-sm leading-6 text-[var(--text-secondary)]">{generated ? generatedReports[0].body : "Click Generate report to prepare an executive-ready weekly update from workspace activity."}</p><button type="button" onClick={() => { if (generatedReports[0]) copyReport(generatedReports[0].id); navigator.clipboard?.writeText(generated ? generatedReports[0].body : summary); setReportNotice("Leadership update copied."); }} className={`mt-4 ${infoButtonClass}`}><Copy className="h-3.5 w-3.5" />Copy update</button></DashboardCard><DashboardCard title="Report History" subtitle={`${generatedReports.length} generated reports`}><div className="space-y-3">{generatedReports.slice(0, 5).map((report) => <div key={report.id} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]"><p className="font-semibold text-[var(--text-primary)]">{report.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{report.tone} · {report.createdAt}{report.copied ? " · Copied" : ""}</p></div>)}{!generatedReports.length ? ["Website Redesign at risk", "Maya near capacity", "64% budget used", "6 approvals waiting"].map((item) => <div key={item} className="flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]"><CheckCircle2 className="h-4 w-4 text-[#00B4D8]" />{item}</div>) : null}</div></DashboardCard></div></motion.div>;
+  return <motion.div variants={containerVariants} initial="hidden" animate="visible"><PageHeader title="Reports" description="Generate summaries and export-ready views from workspace activity." action={<button type="button" onClick={() => { generateReport(); setReportNotice("Workspace report generated and saved to history."); }} className="pulse-button-success px-4 text-sm">Generate report</button>} />{reportNotice ? <div className="mb-4 rounded-xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-3 text-sm text-[var(--text-secondary)]">{reportNotice}</div> : null}<div className="grid gap-4 lg:grid-cols-3">{reports.map((report) => <DashboardCard key={report} title={report} subtitle={generated ? "Generated from current workspace data" : "Report template ready"}><p className="text-sm leading-6 text-[var(--text-secondary)]">{generated ? "Generated report is ready for review and export." : "Prepared from projects, approvals, workload, and expense data."}</p><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => downloadReportBrief(report)} className={infoButtonClass}><FileCheck className="h-3.5 w-3.5" />Download brief</button><button type="button" onClick={() => downloadReportCsv(report)} className={infoButtonClass}><Table2 className="h-3.5 w-3.5" />Download CSV</button></div></DashboardCard>)}</div><div className="mt-4 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]"><DashboardCard title="Leadership Update Draft" subtitle={generated ? generatedReports[0].title : "Weekly summary ready"}><p className="text-sm leading-6 text-[var(--text-secondary)]">{generated ? generatedReports[0].body : "Click Generate report to prepare an executive-ready weekly update from workspace activity."}</p><button type="button" onClick={() => { if (generatedReports[0]) copyReport(generatedReports[0].id); navigator.clipboard?.writeText(generated ? generatedReports[0].body : summary); setReportNotice("Leadership update copied."); }} className={`mt-4 ${infoButtonClass}`}><Copy className="h-3.5 w-3.5" />Copy update</button></DashboardCard><DashboardCard title="Report History" subtitle={`${generatedReports.length} generated reports`}><div className="space-y-3">{generatedReports.slice(0, 5).map((report) => <div key={report.id} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]"><p className="font-semibold text-[var(--text-primary)]">{report.title}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{report.tone} · {report.createdAt}{report.copied ? " · Copied" : ""}</p></div>)}{!generatedReports.length ? ["Website Redesign at risk", "Maya near capacity", "64% budget used", "6 approvals waiting"].map((item) => <div key={item} className="flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]"><CheckCircle2 className="h-4 w-4 text-[#D5BC7A]" />{item}</div>) : null}</div></DashboardCard></div></motion.div>;
 }
 
 export function SettingsScreen() {
@@ -776,12 +788,12 @@ export function SettingsScreen() {
   }
 
   const ToggleRow = ({ label, description }: { label: string; description?: string }) => (
-    <button key={label} type="button" onClick={() => toggleSetting(label)} className="flex w-full items-center justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[#6D5DFB]/35">
+    <button key={label} type="button" onClick={() => toggleSetting(label)} className="flex w-full items-center justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-left transition hover:border-[#2F7D68]/35">
       <span>
         <span className="block text-sm font-semibold text-[var(--text-primary)]">{label}</span>
         {description ? <span className="mt-1 block text-xs leading-5 text-[var(--text-muted)]">{description}</span> : null}
       </span>
-      <span className={`flex h-6 w-11 shrink-0 items-center rounded-full p-1 transition ${toggles[label] ? "bg-[#6D5DFB]" : "bg-white/10"}`}>
+      <span className={`flex h-6 w-11 shrink-0 items-center rounded-full p-1 transition ${toggles[label] ? "bg-[#2F7D68]" : "bg-white/10"}`}>
         <span className={`h-4 w-4 rounded-full bg-white transition ${toggles[label] ? "translate-x-5" : ""}`} />
       </span>
     </button>
@@ -794,16 +806,16 @@ export function SettingsScreen() {
   );
 
   const themeCards = [
-    { id: "midnight", name: "Midnight Pulse", description: "Dark navy command center with cyan and purple accents.", swatches: ["#07090F", "#0A0F1C", "#6D5DFB", "#00B4D8"] },
+    { id: "midnight", name: "Midnight Pulse", description: "Dark navy command center with cyan and purple accents.", swatches: ["#0B0D0C", "#0A0F1C", "#2F7D68", "#D5BC7A"] },
     { id: "graphite", name: "Graphite", description: "Serious enterprise dark mode with slate, white, and blue accents.", swatches: ["#080808", "#18181B", "#60A5FA", "#F5F5F5"] },
     { id: "aurora", name: "Aurora", description: "Modern dark theme with teal and violet glow accents.", swatches: ["#061211", "#0B1B20", "#14B8A6", "#8B5CF6"] },
-    { id: "light", name: "Light Executive", description: "Clean light workspace for business and presentation use.", swatches: ["#F6F8FB", "#FFFFFF", "#4F46E5", "#111827"] },
+    { id: "light", name: "Light Executive", description: "Clean light workspace for business and presentation use.", swatches: ["#F6F8FB", "#FFFFFF", "#4F46E5", "#151816"] },
   ];
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <PageHeader title="Settings" description="Manage your workspace, members, AI assistant, security, and preferences." />
-      {settingsNotice ? <div className="mb-4 rounded-xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-3 text-sm text-[var(--text-secondary)]">{settingsNotice}</div> : null}
+      {settingsNotice ? <div className="mb-4 rounded-xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-3 text-sm text-[var(--text-secondary)]">{settingsNotice}</div> : null}
       <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
         <div role="tablist" aria-label="Settings sections" className="flex gap-2 overflow-x-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-2 lg:block lg:overflow-visible">
           {tabs.map((tab) => (
@@ -831,11 +843,11 @@ export function SettingsScreen() {
                 </div>
               </DashboardCard>
               <DashboardCard title="Workspace Health" subtitle="Signals used in the command center">
-                <ProgressBar value={enterprise.health} color="#00B4D8" />
+                <ProgressBar value={enterprise.health} color="#D5BC7A" />
                 <div className="mt-4 grid gap-2">
                   {["Projects are pacing within expected range", "Approval queue needs same-day attention", "Budget usage remains controlled", "Two teams need workload support"].map((item) => (
                     <div key={item} className="flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm text-[var(--text-secondary)]">
-                      <CheckCircle2 className="h-4 w-4 text-[#00B4D8]" />
+                      <CheckCircle2 className="h-4 w-4 text-[#D5BC7A]" />
                       {item}
                     </div>
                   ))}
@@ -876,7 +888,7 @@ export function SettingsScreen() {
             <DashboardCard title="Teams" subtitle="Team ownership, focus areas, and workload">
               <div className="mb-4 flex flex-wrap gap-2"><button type="button" onClick={() => { createTeam(); setSettingsNotice("Team saved to the workspace."); }} className="pulse-button-success px-4 text-sm">Create Team</button><a href="/app/teams" className="pulse-button-info px-4 text-sm">View teams</a></div>
               <div className="grid gap-3 md:grid-cols-2">
-                {teams.map((team) => <div key={team.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-[var(--text-primary)]">{team.name}</p><p className="mt-1 text-sm text-[var(--text-muted)]">Lead {team.lead} · {team.members} members</p></div><StatusBadge label={team.health} /></div><p className="mt-3 text-sm text-[var(--text-secondary)]">{team.currentFocus}</p><ProgressBar value={team.workloadAverage} color={team.supportNeeded ? "#F87171" : "#00B4D8"} /></div>)}
+                {teams.map((team) => <div key={team.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-[var(--text-primary)]">{team.name}</p><p className="mt-1 text-sm text-[var(--text-muted)]">Lead {team.lead} · {team.members} members</p></div><StatusBadge label={team.health} /></div><p className="mt-3 text-sm text-[var(--text-secondary)]">{team.currentFocus}</p><ProgressBar value={team.workloadAverage} color={team.supportNeeded ? "#F87171" : "#D5BC7A"} /></div>)}
               </div>
             </DashboardCard>
           ) : null}
@@ -921,14 +933,14 @@ export function SettingsScreen() {
 
           {activeTab === "Security" ? (
             <DashboardCard title="Security" subtitle="Workspace controls designed for teams">
-              <div className="grid gap-3 md:grid-cols-2">{["Role-based access", "Workspace permissions", "Activity audit trail", "Data export controls", "Secure AI processing"].map((item) => <div key={item} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4"><p className="font-semibold text-[var(--text-primary)]">{item}</p><p className="mt-2 text-sm leading-5 text-[var(--text-muted)]">Configured for controlled workspace access and reviewable team operations.</p></div>)}</div>
+              <div className="grid gap-3 md:grid-cols-2">{["Role-based access", "Signed session cookies", "Activity audit trail", "Data export controls", "OIDC SSO support"].map((item) => <div key={item} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4"><p className="font-semibold text-[var(--text-primary)]">{item}</p><p className="mt-2 text-sm leading-5 text-[var(--text-muted)]">Available as part of Pulse workspace access and review controls.</p></div>)}</div>
             </DashboardCard>
           ) : null}
 
           {activeTab === "AI Assistant" ? (
             <DashboardCard title="AI Assistant" subtitle="Control how Ask Pulse and Autopilot help your team">
               <div className="grid gap-3 md:grid-cols-2">{["Ask Pulse enabled", "Autopilot suggestions enabled", "Require manager confirmation", "Include expenses in AI context", "Include team workload in AI context", "Include approval queue", "Save AI activity to audit trail"].map((item) => <ToggleRow key={item} label={item} />)}</div>
-              <div className="mt-4 rounded-2xl border border-[#00B4D8]/20 bg-[#00B4D8]/10 p-4"><p className="font-semibold text-[var(--text-primary)]">AI status</p><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Ask Pulse is ready to answer questions using your workspace data.</p></div>
+              <div className="mt-4 rounded-2xl border border-[#D5BC7A]/20 bg-[#D5BC7A]/10 p-4"><p className="font-semibold text-[var(--text-primary)]">AI status</p><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Ask Pulse is ready to answer questions using your workspace data.</p></div>
             </DashboardCard>
           ) : null}
 

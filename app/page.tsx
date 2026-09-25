@@ -6,7 +6,7 @@ import CTASection from "@/components/CTASection";
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen" style={{ background: "#07090F" }}>
+    <main className="relative min-h-screen" style={{ background: "#0B0D0C" }}>
       <Navbar />
       <HeroPulse />
       <ToolReplacementSection />
@@ -18,8 +18,8 @@ export default function HomePage() {
         className="relative py-8 text-center"
         style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
       >
-        <p className="text-sm" style={{ color: "#2D3A52" }}>
-          © 2025 Pulse. Built for fast-moving teams.
+        <p className="text-sm" style={{ color: "#69706A" }}>
+          © 2026 Pulse. Built for teams that want less tool sprawl.
         </p>
       </footer>
     </main>

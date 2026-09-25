@@ -9,6 +9,7 @@ import SubmitButton from "@/components/auth/SubmitButton";
 
 export default function SigninForm() {
   const router = useRouter();
+  const ssoEnabled = process.env.NEXT_PUBLIC_SSO_ENABLED === "true";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -105,13 +106,21 @@ export default function SigninForm() {
         type="button"
         onClick={handleDemoLogin}
         disabled={loading}
-        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#C8D0E8] transition hover:border-[#6D5DFB]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#C8CCC7] transition hover:border-[#2F7D68]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
       >
         Try the demo
       </button>
-      <p className="mt-6 text-center text-sm text-[#6B7A9F]">
+      {ssoEnabled ? (
+        <a
+          href="/api/auth/sso/start"
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-transparent px-4 py-3 text-sm font-semibold text-[#C8CCC7] transition hover:border-white/20 hover:text-white"
+        >
+          Continue with company SSO
+        </a>
+      ) : null}
+      <p className="mt-6 text-center text-sm text-[#737A74]">
         New to Pulse?{" "}
-        <Link href="/signup" className="font-medium text-[#8B7FFF] transition hover:text-white">
+        <Link href="/signup" className="font-medium text-[#D5BC7A] transition hover:text-white">
           Create an account
         </Link>
       </p>

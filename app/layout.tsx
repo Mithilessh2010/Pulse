@@ -18,9 +18,9 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Pulse — AI Team Operating System",
+  title: "Pulse — Team Operations, in One Workspace",
   description:
-    "Projects, approvals, expenses, workload, and team insights — unified in one command center for fast-moving teams.",
+    "Projects, approvals, workload, expenses, and team reporting in one focused workspace.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

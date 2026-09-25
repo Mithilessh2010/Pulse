@@ -41,7 +41,7 @@ function ChecklistCard({ title, icon: Icon, items }: { title: string; icon: Luci
       <div className="space-y-2">
         {items.map((item) => (
           <div key={item} className="flex gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-3 text-sm leading-5 text-[var(--text-secondary)]">
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#00B4D8]" />
+            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#D5BC7A]" />
             <span>{item}</span>
           </div>
         ))}
@@ -56,7 +56,7 @@ export default function QaPage() {
       <div className="rounded-[24px] border border-[var(--border-subtle)] bg-[var(--card-bg)] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#00B4D8]">Internal QA</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D5BC7A]">Internal QA</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Pulse stabilization checklist</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-muted)]">Route, layout, and interaction notes for the current product polish pass. This page is intentionally not linked in the sidebar.</p>
           </div>
@@ -68,8 +68,8 @@ export default function QaPage() {
         <DashboardCard title="Routes checked" subtitle={`${checkedRoutes.length} Pulse routes in the audit set`}>
           <div className="grid gap-2 sm:grid-cols-2">
             {checkedRoutes.map((path) => (
-              <a key={path} href={path} className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:border-[#6D5DFB]/40 hover:text-[var(--text-primary)]">
-                <Route className="h-3.5 w-3.5 text-[#6D5DFB]" />
+              <a key={path} href={path} className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:border-[#2F7D68]/40 hover:text-[var(--text-primary)]">
+                <Route className="h-3.5 w-3.5 text-[#2F7D68]" />
                 {path}
               </a>
             ))}

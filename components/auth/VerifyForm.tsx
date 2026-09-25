@@ -75,10 +75,10 @@ export default function VerifyForm({ email }: VerifyFormProps) {
   return (
     <>
       <div className="mb-5 rounded-lg border border-white/10 bg-white/[0.035] px-3.5 py-3">
-        <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#4D5E78]">
+        <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#5F665F]">
           Verification email
         </p>
-        <p className="mt-1 break-words text-sm text-[#C8D0E8]">{safeEmail || "Missing email"}</p>
+        <p className="mt-1 break-words text-sm text-[#C8CCC7]">{safeEmail || "Missing email"}</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthField
@@ -97,16 +97,16 @@ export default function VerifyForm({ email }: VerifyFormProps) {
           Verify and continue
         </SubmitButton>
       </form>
-      <div className="mt-6 flex flex-col items-center gap-3 text-sm text-[#6B7A9F] sm:flex-row sm:justify-between">
+      <div className="mt-6 flex flex-col items-center gap-3 text-sm text-[#737A74] sm:flex-row sm:justify-between">
         <button
           type="button"
           onClick={resendCode}
           disabled={resending || !safeEmail}
-          className="font-medium text-[#8B7FFF] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="font-medium text-[#D5BC7A] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {resending ? "Generating code" : "Request a new code"}
         </button>
-        <Link href="/signin" className="font-medium text-[#8B7FFF] transition hover:text-white">
+        <Link href="/signin" className="font-medium text-[#D5BC7A] transition hover:text-white">
           Back to sign in
         </Link>
       </div>

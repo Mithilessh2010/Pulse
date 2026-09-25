@@ -176,7 +176,7 @@ type PulseState = {
   convertMessageToTask: (roomId: string, messageId: string) => string | null;
   pinMessageAsDecision: (roomId: string, messageId: string) => string | null;
   approveApproval: (approvalId: string) => void;
-  requestApprovalChanges: (approvalId: string) => void;
+  requestApprovalChanges: (approvalId: string, feedback?: string) => void;
   approveExpense: (expenseId: string) => void;
   rejectExpense: (expenseId: string) => void;
   submitExpense: (data?: Partial<Expense>) => string;
@@ -370,7 +370,7 @@ function initialData() {
     settings: clone(defaultSettings),
     generatedAiSummaries: {},
     autopilotPlans: [],
-    selectedTheme: "midnight",
+    selectedTheme: "graphite",
   };
 }
 
@@ -487,10 +487,10 @@ export const usePulseStore = create<PulseState>()(
         activityFeed: [`Approval approved: ${state.approvals.find((item) => item.id === approvalId)?.title ?? approvalId}`, ...state.activityFeed],
         auditTrail: [`${nowLabel()} · Approval approved: ${approvalId}`, ...state.auditTrail],
       })),
-      requestApprovalChanges: (approvalId) => set((state) => ({
-        approvals: state.approvals.map((item) => item.id === approvalId ? { ...item, status: "Changes Requested", resolvedAt: nowLabel(), resolvedBy: "Mithilessh", auditTrail: [...item.auditTrail, "Changes requested"] } : item),
+      requestApprovalChanges: (approvalId, feedback = "") => set((state) => ({
+        approvals: state.approvals.map((item) => item.id === approvalId ? { ...item, status: "Changes Requested", changeRequest: feedback.trim() || "Please review the submitted proof and address the requested changes.", resolvedAt: nowLabel(), resolvedBy: "Mithilessh", auditTrail: [...item.auditTrail, feedback.trim() ? `Changes requested: ${feedback.trim()}` : "Changes requested"] } : item),
         activityFeed: [`Changes requested: ${state.approvals.find((item) => item.id === approvalId)?.title ?? approvalId}`, ...state.activityFeed],
-        auditTrail: [`${nowLabel()} · Changes requested: ${approvalId}`, ...state.auditTrail],
+        auditTrail: [`${nowLabel()} · Changes requested: ${approvalId}${feedback.trim() ? ` · ${feedback.trim()}` : ""}`, ...state.auditTrail],
       })),
       approveExpense: (expenseId) => set((state) => ({
         expenses: state.expenses.map((expense) => expense.id === expenseId ? { ...expense, status: "Approved" } : expense),

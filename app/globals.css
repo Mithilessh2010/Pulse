@@ -3,31 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --app-bg: #07090F;
-  --sidebar-bg: rgba(7, 9, 15, 0.9);
-  --card-bg: rgba(12, 18, 32, 0.75);
-  --card-raised-bg: rgba(17, 24, 39, 0.85);
-  --text-primary: #F0F2F8;
-  --text-secondary: #C8D0E8;
-  --text-muted: #6B7A9F;
+  --app-bg: #0B0D0C;
+  --sidebar-bg: rgba(14, 16, 15, 0.98);
+  --card-bg: rgba(17, 20, 18, 0.92);
+  --card-raised-bg: rgba(21, 24, 22, 0.96);
+  --text-primary: #F4F1EA;
+  --text-secondary: #C8CCC7;
+  --text-muted: #737A74;
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.14);
-  --accent: #6d5dfb;
-  --accent-2: #00b4d8;
+  --accent: #2F7D68;
+  --accent-2: #D5BC7A;
   --success: #4ADE80;
   --warning: #FBBF24;
   --risk: #F87171;
-  --bg: #07090F;
-  --card: #0C1220;
-  --card-raised: #111827;
-  --purple: #6d5dfb;
-  --purple-muted: #8B7FFF;
-  --cyan: #00b4d8;
+  --bg: #0B0D0C;
+  --card: #111412;
+  --card-raised: #151816;
+  --purple: #2F7D68;
+  --purple-muted: #D5BC7A;
+  --cyan: #D5BC7A;
   --green: #4ADE80;
   --gold: #FBBF24;
   --risk: #F87171;
-  --text-main: #F0F2F8;
-  --text-secondary: #6B7A9F;
+  --text-main: #F4F1EA;
+  --text-secondary: #737A74;
   --glass-border: rgba(255, 255, 255, 0.06);
 }
 
@@ -69,7 +69,7 @@ samp {
   background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(109, 93, 251, 0.25);
+  background: rgba(213, 188, 122, 0.24);
   border-radius: 3px;
 }
 
@@ -89,19 +89,19 @@ samp {
 
 @layer components {
   .pulse-button-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/50 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-[#2F7D68]/50 disabled:cursor-not-allowed disabled:opacity-60;
     position: relative;
     overflow: hidden;
-    background: #6d5dfb;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 8px 24px rgba(109, 93, 251, 0.18);
+    background: #2F7D68;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
   }
 
   .pulse-button-primary:hover {
-    background: #7c6efc;
+    background: #378B74;
   }
 
   .pulse-button-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-medium transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/45 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-medium transition focus:outline-none focus:ring-2 focus:ring-[#2F7D68]/45 disabled:cursor-not-allowed disabled:opacity-60;
     position: relative;
     overflow: hidden;
     border-color: var(--border-subtle);
@@ -115,7 +115,7 @@ samp {
   }
 
   .pulse-button-chip {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition focus:outline-none focus:ring-2 focus:ring-[#6D5DFB]/45 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition focus:outline-none focus:ring-2 focus:ring-[#2F7D68]/45 disabled:cursor-not-allowed disabled:opacity-60;
     position: relative;
     overflow: hidden;
     border-color: var(--border-subtle);
@@ -175,18 +175,18 @@ samp {
   }
 
   .pulse-button-info {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#00B4D8]/40 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#D5BC7A]/40 disabled:cursor-not-allowed disabled:opacity-60;
     position: relative;
     overflow: hidden;
-    border-color: rgba(0, 180, 216, 0.32);
-    background: rgba(0, 180, 216, 0.12);
-    color: #a5f3fc;
+    border-color: rgba(213, 188, 122, 0.28);
+    background: rgba(213, 188, 122, 0.10);
+    color: #E7D7AD;
   }
 
   .pulse-button-info:hover {
-    border-color: rgba(0, 180, 216, 0.55);
-    background: rgba(0, 180, 216, 0.18);
-    color: #ecfeff;
+    border-color: rgba(213, 188, 122, 0.48);
+    background: rgba(213, 188, 122, 0.14);
+    color: #F4E8C8;
   }
 
   .pulse-button-primary:active,
@@ -204,17 +204,14 @@ samp {
   }
 }
 
-/* Toned-down glows — roughly 40% less intense than before */
-.glow-purple {
-  box-shadow: 0 0 24px rgba(109, 93, 251, 0.14), 0 0 48px rgba(109, 93, 251, 0.06);
-}
-
+/* Legacy utility names kept for compatibility; intentionally no neon glow. */
+.glow-purple,
 .glow-cyan {
-  box-shadow: 0 0 24px rgba(0, 180, 216, 0.12), 0 0 48px rgba(0, 180, 216, 0.05);
+  box-shadow: none;
 }
 
 .text-gradient-purple {
-  background: linear-gradient(135deg, #8B7FFF, #A78BFA);
+  background: linear-gradient(135deg, #D5BC7A, #E1CE9D);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

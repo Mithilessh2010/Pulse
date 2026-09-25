@@ -10,7 +10,7 @@ interface ProgressBarProps {
 
 export default function ProgressBar({
   value,
-  color = "#6D5DFB",
+  color = "#2F7D68",
   height = 4,
   animate = true,
 }: ProgressBarProps) {
