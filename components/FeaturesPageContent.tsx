@@ -1,5 +1,9 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { ArrowRight, BarChart3, CheckSquare, CircleDollarSign, MessagesSquare, ShieldCheck, Users } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { Reveal } from "@/components/motion/Reveal";
 
 const groups = [
   { Icon: BarChart3, title: "Projects", items: ["Portfolio health", "Project pacing", "Owners and milestones", "Blockers", "Grid and board views"] },
@@ -15,31 +19,40 @@ export default function FeaturesPageContent() {
     <main className="min-h-screen bg-[#0B0D0C] text-white">
       <Navbar />
       <section className="mx-auto max-w-7xl px-6 pb-16 pt-32 md:px-10 md:pt-36">
-        <div className="max-w-3xl">
+        <Reveal className="max-w-3xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9EA59F]">Features</p>
           <h1 className="mt-4 text-5xl font-semibold leading-[1.02] tracking-[-0.045em] text-[#F4F1EA] md:text-6xl">Enough structure to run the work. Not another maze of features.</h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-[#8E958F]">Pulse groups the common team-management workflows around a shared workspace, with progressive detail instead of putting every control on the first screen.</p>
-        </div>
+        </Reveal>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 pb-20 md:px-10">
         <div className="grid border-l border-t border-white/[0.07] md:grid-cols-2 lg:grid-cols-3">
-          {groups.map(({ Icon, title, items }) => (
-            <article key={title} className="border-b border-r border-white/[0.07] p-6">
-              <div className="flex items-center gap-3"><Icon className="h-5 w-5 text-[#D5BC7A]" /><h2 className="text-base font-semibold text-[#E5E7E4]">{title}</h2></div>
+          {groups.map(({ Icon, title, items }, index) => (
+            <motion.article
+              key={title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.18 }}
+              transition={{ delay: (index % 3) * 0.06, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ y: -3, backgroundColor: "rgba(255,255,255,0.018)" }}
+              className="feature-motion-card group relative overflow-hidden border-b border-r border-white/[0.07] p-6"
+            >
+              <div aria-hidden="true" className="feature-card-sweep" />
+              <div className="flex items-center gap-3"><motion.div whileHover={{ rotate: -4, scale: 1.08 }}><Icon className="h-5 w-5 text-[#D5BC7A]" /></motion.div><h2 className="text-base font-semibold text-[#E5E7E4]">{title}</h2></div>
               <ul className="mt-6 space-y-3">
-                {items.map((item) => <li key={item} className="flex items-center gap-2.5 text-sm text-[#8E958F]"><span className="h-1 w-1 rounded-full bg-[#4B9B7C]" />{item}</li>)}
+                {items.map((item, itemIndex) => <motion.li key={item} initial={{ opacity: 0, x: -6 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.08 + itemIndex * 0.035, duration: 0.35 }} className="flex items-center gap-2.5 text-sm text-[#8E958F]"><span className="h-1 w-1 rounded-full bg-[#4B9B7C]" />{item}</motion.li>)}
               </ul>
-            </article>
+            </motion.article>
           ))}
         </div>
       </section>
 
       <section className="border-y border-white/[0.06] bg-[#0E100F]">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-6 py-12 md:flex-row md:items-center md:px-10">
+        <Reveal className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-6 py-12 md:flex-row md:items-center md:px-10">
           <div><h2 className="text-2xl font-semibold tracking-[-0.03em] text-[#F4F1EA]">The easiest way to understand it is to click through it.</h2><p className="mt-2 text-sm text-[#737A74]">The demo opens with sample data and no account.</p></div>
-          <a href="/demo" className="inline-flex w-fit items-center gap-2 rounded-lg bg-[#2F7D68] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#378B74]">Open live demo <ArrowRight className="h-4 w-4" /></a>
-        </div>
+          <motion.a href="/demo" className="pulse-magnetic-button inline-flex w-fit items-center gap-2 rounded-lg bg-[#2F7D68] px-5 py-3 text-sm font-semibold text-white" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>Open live demo <ArrowRight className="h-4 w-4" /></motion.a>
+        </Reveal>
       </section>
     </main>
   );
